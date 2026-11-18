@@ -17,7 +17,7 @@ Bits per note are comparable across encodings; per-token perplexity is not. `tet
 
 ## Generation metrics
 
-Computed after decoding to Koma53. The reference row is the same metric on the real test continuations.
+Computed after decoding to Koma53. Reference rows are the same metrics on the real test continuations: once as written (53-comma) and once after rounding to 12-TET, which is the ceiling for the `tet12` encoding.
 
 | Model | Pitch | Cond | Scale overlap ↑ | Off-scale rate ↓ | Bar validity ↑ | Copy rate | Grammar ok ↑ |
 |---|---|---|---|---|---|---|---|
@@ -27,4 +27,5 @@ Computed after decoding to Koma53. The reference row is the same metric on the r
 | transformer | koma53_rel | none | 0.863 | 0.020 | 0.283 | 0.037 | 1.000 |
 | transformer | koma53_rel | prefix | 0.878 | 0.005 | 0.310 | 0.041 | 1.000 |
 | transformer | tet12 | prefix | 0.744 | 0.128 | 0.369 | 0.030 | 1.000 |
-| *reference (real music)* | | | 0.761 | 0.140 | 0.783 | 0.048 | 1.000 |
+| *reference: real music* | | | 0.907 | 0.015 | 0.783 | 0.088 | 1.000 |
+| *reference: real music rounded to 12-TET* | | | 0.761 | 0.140 | 0.783 | 0.048 | 1.000 |

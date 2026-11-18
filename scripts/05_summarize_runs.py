@@ -3,13 +3,13 @@ Reports mean ± standard deviation over seeds for every (model, pitch, cond) con
 import collections, glob, json, os, statistics
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-groups = collections.defaultdict(list); ref = None
+groups = collections.defaultdict(list); refs = {}
 for f in sorted(glob.glob(os.path.join(ROOT, "runs", "*", "metrics.json"))):
     m = json.load(open(f)); c = m["config"]
     if c.get("smoke") or c.get("name"): continue           # skip smoke tests and ad-hoc named runs
     g = os.path.join(os.path.dirname(f), "generation_metrics.json")
     gen = json.load(open(g)) if os.path.exists(g) else None
-    if gen: ref = gen["reference"]
+    if gen: refs[c["pitch"]] = gen["reference"]     # reference depends on what the encoding can represent
     groups[(c["model"], c["pitch"], c["cond"])].append((m, gen))
 
 def ms(vals):
@@ -26,12 +26,14 @@ for k in sorted(groups):
     L.append(f"| {k[0]} | {k[1]} | {k[2]} | {len(r)} | {r[0]['n_params'] / 1e6:.2f}M | {t('bits_per_note')} | "
              f"{t('pitch_bits_per_note')} | {t('dur_bits_per_note')} | {t('bar_bits_per_note')} |")
 L += ["\n## Generation metrics\n",
-      "Computed after decoding to Koma53. The reference row is the same metric on the real test continuations.\n",
+      "Computed after decoding to Koma53. Reference rows are the same metrics on the real test continuations: once as written (53-comma) and once after rounding to 12-TET, which is the ceiling for the `tet12` encoding.\n",
       "| Model | Pitch | Cond | Scale overlap ↑ | Off-scale rate ↓ | Bar validity ↑ | Copy rate | Grammar ok ↑ |", "|---|---|---|---|---|---|---|---|"]
 keys = ("scale_overlap", "off_scale_rate", "bar_validity", "copy_rate", "grammar_ok")
 for k in sorted(groups):
     g = [x["generated"] for _, x in groups[k] if x]
     if g: L.append(f"| {k[0]} | {k[1]} | {k[2]} | " + " | ".join(ms([x[q] for x in g]) for q in keys) + " |")
-if ref: L.append("| *reference (real music)* | | | " + " | ".join(f"{ref[q]:.3f}" for q in keys) + " |")
+for label, enc in (("real music", "koma53"), ("real music rounded to 12-TET", "tet12")):
+    ref = refs.get(enc) or (refs.get("koma53_rel") if enc == "koma53" else None)
+    if ref: L.append(f"| *reference: {label}* | | | " + " | ".join(f"{ref[q]:.3f}" for q in keys) + " |")
 open(os.path.join(ROOT, "reports", "baseline_results.md"), "w", encoding="utf-8").write("\n".join(L) + "\n")
 print("\n".join(L))
