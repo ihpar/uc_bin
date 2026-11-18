@@ -1,0 +1,4 @@
+pymupdf
+fonttools
+matplotlib
+torch

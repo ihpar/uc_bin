@@ -54,6 +54,25 @@ class Piece:
                 continue
         return out
 
+    @property
+    def events(self):
+        """Notes and rests as dicts with onset/offset in measures:
+        koma (Koma53, REST for rests), ae (AEU note name), num/den (notated
+        duration as a fraction of a whole note), onset, offset."""
+        out, prev = [], 0.0
+        for r in self.rows:
+            if r["Kod"] != NOTE_CODE:
+                continue
+            try:
+                koma, num, den, off = int(r["Koma53"]), int(r["Pay"]), int(r["Payda"]), float(r["Offset"])
+            except ValueError:
+                continue
+            if num <= 0 or den <= 0:
+                continue
+            out.append(dict(koma=koma, ae=r["NotaAE"], num=num, den=den, onset=prev, offset=off))
+            prev = off
+        return out
+
 
 def load_piece(fname: str, txt_dir: str = TXT_DIR) -> Piece:
     text = read_text(os.path.join(txt_dir, fname))

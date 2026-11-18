@@ -1,2 +1,5 @@
 .DS_Store
 **/.DS_Store__pycache__/
+runs/**/*.pt
+runs/*-smoke/
+runs/sanity-cpu/
