@@ -1,9 +1,9 @@
-"""SymbTr PDF'lerinden (vektör, gömülü Mus2 fontu) otomatik sembol kutusu çıkarımı.
+"""Automatic symbol bounding boxes from SymbTr PDFs (vector, embedded Mus2 font).
 
-Her müzik sembolü Mus2 fontunun bir karakteridir. Karakterin sayfadaki konumu
-PDF'ten, sıkı sınır kutusu ise gömülü fontun glif sınırlarından hesaplanır.
-Dizek çizgileri, ölçü çizgileri, kirişler, bağlar gibi öğeler font karakteri
-değil vektör çizimdir; `page_drawings` ile ayrıca alınır."""
+Every music symbol is a character of the Mus2 font. The character position on
+the page comes from the PDF; the tight bounding box comes from the glyph bounds
+of the embedded font. Staff lines, barlines, beams, slurs etc. are vector
+drawings rather than font characters and are returned by `page_drawings`."""
 from __future__ import annotations
 import io, logging
 import pymupdf
@@ -13,17 +13,17 @@ logging.getLogger("fontTools").setLevel(logging.ERROR)
 MUSIC_FONT = "Mus2"
 
 
-def _glyph_boxes(doc, page) -> dict:
-    """Sayfadaki müzik fontları için {font_adı: (cmap, glyf, upm)}."""
+def _glyph_tables(doc, page) -> dict:
+    """{font name: (cmap, glyf, unitsPerEm)} for the music fonts on the page."""
     out = {}
     for f in page.get_fonts(full=True):
         if MUSIC_FONT not in f[3]:
             continue
+        if f[1] != "ttf" or f[2] != "TrueType":
+            continue                # CFF/Type0 embeddings: see font_kind()
         buf = doc.extract_font(f[0])[3]
         if not buf:
             continue
-        if f[1] != "ttf" or f[2] != "TrueType":
-            continue                # CFF/Type0 gömmeler: bkz. font_kinds()
         try:
             t = TTFont(io.BytesIO(buf))
         except Exception:
@@ -36,7 +36,7 @@ def _glyph_boxes(doc, page) -> dict:
 
 
 def _code(ch: str):
-    """MuPDF'in Unicode'a çevirdiği karakteri fonttaki bayt koduna geri çevirir."""
+    """Map the Unicode character reported by MuPDF back to the font byte code."""
     try:
         return ch.encode("cp1252")[0]
     except (UnicodeEncodeError, IndexError):
@@ -44,11 +44,11 @@ def _code(ch: str):
 
 
 def page_symbols(doc, page) -> list[dict]:
-    """[{code, bbox:(x0,y0,x1,y1) punto cinsinden, size}] döndürür."""
-    fonts = _glyph_boxes(doc, page)
-    if not fonts:
+    """Return [{code, bbox: (x0, y0, x1, y1) in points, size}].
+    bbox is None when the character could not be mapped to a glyph."""
+    tables = list(_glyph_tables(doc, page).values())   # a file may hold several Mus2 subsets
+    if not tables:
         return []
-    tables = list(fonts.values())      # dosyada birden çok Mus2 alt kümesi olabilir
     syms = []
     for b in page.get_text("rawdict")["blocks"]:
         for l in b.get("lines", []):
@@ -66,7 +66,7 @@ def page_symbols(doc, page) -> list[dict]:
                     gname, glyf, upm = hit
                     g = glyf[gname]
                     if g.numberOfContours == 0:
-                        continue            # boşluk
+                        continue            # empty glyph
                     ox, oy = ch["origin"]; z = s["size"] / upm
                     syms.append(dict(code=code, size=s["size"],
                                      bbox=(ox + g.xMin * z, oy - g.yMax * z, ox + g.xMax * z, oy - g.yMin * z)))
@@ -74,27 +74,27 @@ def page_symbols(doc, page) -> list[dict]:
 
 
 def page_drawings(page) -> list[dict]:
-    """Vektör çizimler: yatay/dikey çizgi, eğri (bağ), dolu çokgen (kiriş vb.)."""
+    """Vector drawings: horizontal/vertical lines, curves (slurs), filled shapes (beams etc.)."""
     out = []
     for d in page.get_drawings():
         r = d["rect"]; kinds = {it[0] for it in d["items"]}
-        if "c" in kinds: k = "egri"
-        elif d["type"] in ("f", "fs"): k = "dolu"
-        elif r.height < 1.0 and r.width > 2: k = "yatay_cizgi"
-        elif r.width < 1.0 and r.height > 2: k = "dikey_cizgi"
-        else: k = "diger"
+        if "c" in kinds: k = "curve"
+        elif d["type"] in ("f", "fs"): k = "filled"
+        elif r.height < 1.0 and r.width > 2: k = "hline"
+        elif r.width < 1.0 and r.height > 2: k = "vline"
+        else: k = "other"
         out.append(dict(kind=k, bbox=(r.x0, r.y0, r.x1, r.y1)))
     return out
 
 
-def font_kinds(doc) -> str:
-    """Dosyanın müzik fontunu nasıl gömdüğünü sınıflar: 'truetype' (bu modülle
-    doğrudan çıkarılır), 'cff_type0' (glif indeksiyle çıkarım gerekir) veya
-    'font_yok' (semboller vektör yol/raster ya da adsız font)."""
+def font_kind(doc) -> str:
+    """How the file embeds the music font: 'truetype' (extracted directly by this
+    module), 'cff_type0' (needs extraction by glyph index) or 'no_font' (symbols
+    are vector paths, raster images or an unnamed font)."""
     kinds = set()
     for page in doc:
         for f in page.get_fonts(full=True):
             if MUSIC_FONT in f[3]:
                 kinds.add("truetype" if (f[1] == "ttf" and f[2] == "TrueType") else "cff_type0")
     if "truetype" in kinds: return "truetype"
-    return "cff_type0" if kinds else "font_yok"
+    return "cff_type0" if kinds else "no_font"

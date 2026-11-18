@@ -1,21 +1,21 @@
 # uc_bin
 
-TÜBİTAK 3501 yeniden başvurusu için ön çalışma deposu: SymbTr v3 üzerinde makam duyarlı sembolik modelleme ve optik müzik tanıma.
+Preliminary work for a TÜBİTAK 3501 resubmission: makam-aware symbolic music modelling and optical music recognition on SymbTr v3.
 
-## İçerik
+## Contents
 
-| Yol | Açıklama |
+| Path | Description |
 |---|---|
-| `symbtr_v3/` | SymbTr v3 txt ve PDF dosyaları (CC BY 4.0, Karaosmanoğlu; Zenodo 10.5281/zenodo.15470412) |
-| `src/symbtr.py` | txt ayrıştırıcı |
-| `src/pdf_semboller.py` | PDF'ten otomatik sembol kutusu çıkarımı |
-| `scripts/01_veri_raporu.py` | Dağılımlar ve eser bazlı bölme → `reports/veri_raporu.md`, `data/bolmeler.csv` |
-| `scripts/02_pdf_sembol_envanteri.py` | Sembol envanteri ve atlas → `reports/pdf_sembol_raporu.md` |
+| `symbtr_v3/` | SymbTr v3 txt, PDF, mu2 and MusicXML files (CC BY 4.0, Karaosmanoğlu; Zenodo 10.5281/zenodo.15470412) |
+| `src/symbtr.py` | txt parser |
+| `src/pdf_symbols.py` | automatic symbol bounding boxes from the PDFs |
+| `scripts/01_data_report.py` | distributions and piece-level split → `reports/data_report.md`, `data/splits.csv` |
+| `scripts/02_pdf_symbol_inventory.py` | symbol inventory and glyph atlas → `reports/pdf_symbol_report.md` |
 
-## Çalıştırma
+## Usage
 
 ```
 pip install pymupdf fonttools matplotlib
-python scripts/01_veri_raporu.py
-python scripts/02_pdf_sembol_envanteri.py
+python scripts/01_data_report.py
+python scripts/02_pdf_symbol_inventory.py
 ```

@@ -1,0 +1,36 @@
+{
+ "files": 2999,
+ "pages": 4466,
+ "symbols": 569753,
+ "distinct_codes": 85,
+ "fully_extracted": {
+  "files": 1656,
+  "pages": 2260,
+  "symbols": 500323
+ },
+ "embedding_files": {
+  "truetype": 1874,
+  "cff_type0": 593,
+  "no_font": 532
+ },
+ "embedding_pages": {
+  "truetype": 2575,
+  "cff_type0": 809,
+  "no_font": 1082
+ },
+ "unmapped_chars": 5785,
+ "drawings": {
+  "other": 454076,
+  "vline": 507595,
+  "hline": 339856,
+  "curve": 487444,
+  "filled": 156577
+ },
+ "font_sizes": {
+  "21": 523675,
+  "25": 39873,
+  "10": 3789,
+  "14": 2118,
+  "15": 298
+ }
+}

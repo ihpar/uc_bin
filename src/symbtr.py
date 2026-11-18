@@ -1,16 +1,19 @@
-"""SymbTr v3 txt dosyaları için ayrıştırıcı ve yardımcılar."""
+"""Parser and helpers for SymbTr v3 txt files."""
 from __future__ import annotations
 import csv, io, os
 from dataclasses import dataclass, field
 
-TXT_DIR = os.path.join(os.path.dirname(__file__), "..", "symbtr_v3", "txt_v3")
-PDF_DIR = os.path.join(os.path.dirname(__file__), "..", "symbtr_v3", "pdf_v3")
-NOTE_KOD = "9"      # asıl nota/sus satırları
-REST = -1           # Koma53 == -1 -> sus
+_ROOT = os.path.join(os.path.dirname(__file__), "..", "symbtr_v3")
+TXT_DIR = os.path.join(_ROOT, "txt_v3")
+PDF_DIR = os.path.join(_ROOT, "pdf_v3")
+MU2_DIR = os.path.join(_ROOT, "mu2_v3")
+XML_DIR = os.path.join(_ROOT, "xml_v3")
+NOTE_CODE = "9"     # value of the "Kod" column for regular note/rest rows
+REST = -1           # Koma53 == -1 marks a rest
 
 
 def read_text(path: str) -> str:
-    """Dosyalar karışık kodlamalı: önce UTF-8, sonra Windows-1254 denenir."""
+    """Files use mixed encodings: try UTF-8 first, then Windows-1254."""
     raw = open(path, "rb").read()
     for enc in ("utf-8", "cp1254"):
         try:
@@ -21,27 +24,28 @@ def read_text(path: str) -> str:
 
 
 def parse_name(fname: str) -> dict:
-    """makam--form--usul--eser_adi--besteci. Bazı taksimlerde eser adı boş
-    olduğundan alan sayısı 5'i aşabiliyor; ilk üç ve son alan sabit kabul edilir."""
+    """File names follow makam--form--usul--title--composer. Some taksim files
+    have an empty title, which yields more than five fields; the first three
+    fields and the last one are treated as fixed."""
     p = os.path.splitext(fname)[0].split("--")
     makam, form, usul = p[0], p[1], p[2].strip("-")
-    besteci = p[-1].strip("-")
-    eser = "--".join(p[3:-1]).strip("-") if len(p) > 4 else ""
-    return dict(makam=makam, form=form, usul=usul, eser=eser, besteci=besteci)
+    composer = p[-1].strip("-")
+    title = "--".join(p[3:-1]).strip("-") if len(p) > 4 else ""
+    return dict(makam=makam, form=form, usul=usul, title=title, composer=composer)
 
 
 @dataclass
 class Piece:
     fname: str
     meta: dict
-    rows: list = field(default_factory=list)   # tüm satırlar (dict)
+    rows: list = field(default_factory=list)   # all rows as dicts (original column names)
 
     @property
     def notes(self):
-        """Sesli notalar ve suslar: (koma53, pay, payda, ms, offset)."""
+        """Notes and rests as (koma53, numerator, denominator, ms, offset)."""
         out = []
         for r in self.rows:
-            if r["Kod"] != NOTE_KOD:
+            if r["Kod"] != NOTE_CODE:
                 continue
             try:
                 out.append((int(r["Koma53"]), int(r["Pay"]), int(r["Payda"]),
