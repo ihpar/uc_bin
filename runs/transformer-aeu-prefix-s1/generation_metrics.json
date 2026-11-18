@@ -1,0 +1,26 @@
+{
+ "run": "transformer-aeu-prefix-s1",
+ "pieces": 238,
+ "prompt_notes": 16,
+ "new_notes": 64,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "generated": {
+  "scale_overlap": 0.8169178433609571,
+  "off_scale_rate": 0.05288494601471701,
+  "bar_validity": 0.33962264150943394,
+  "copy_rate": 0.023293527937490784,
+  "grammar_ok": 1.0,
+  "notes": 14541,
+  "measures": 1643
+ },
+ "reference": {
+  "scale_overlap": 0.8463613094442026,
+  "off_scale_rate": 0.05950266429840142,
+  "bar_validity": 0.783109404990403,
+  "copy_rate": 0.06693203597228366,
+  "grammar_ok": 1.0,
+  "notes": 14638,
+  "measures": 1563
+ }
+}

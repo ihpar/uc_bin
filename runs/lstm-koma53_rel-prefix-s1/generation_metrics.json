@@ -1,0 +1,26 @@
+{
+ "run": "lstm-koma53_rel-prefix-s1",
+ "pieces": 238,
+ "prompt_notes": 16,
+ "new_notes": 64,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "generated": {
+  "scale_overlap": 0.8634655195278268,
+  "off_scale_rate": 0.020490355401681624,
+  "bar_validity": 0.32137834036568214,
+  "copy_rate": 0.031920663206012244,
+  "grammar_ok": 0.9997255197968846,
+  "notes": 14153,
+  "measures": 1422
+ },
+ "reference": {
+  "scale_overlap": 0.9072179674458668,
+  "off_scale_rate": 0.014687798879628365,
+  "bar_validity": 0.783109404990403,
+  "copy_rate": 0.08830900781365178,
+  "grammar_ok": 1.0,
+  "notes": 14638,
+  "measures": 1563
+ }
+}
