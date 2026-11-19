@@ -3,5 +3,5 @@
 __pycache__/
 runs/**/*.pt
 runs/*-smoke/
-runs/sanity-cpu/
+runs/sanity-*/
 checkpoints.tar.gz

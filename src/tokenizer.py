@@ -1,6 +1,16 @@
 """Event-based tokenization of SymbTr pieces with four pitch encodings.
 
-Sequence layout:  BOS [MAKAM:x USUL:y FORM:z]  ( [BAR] [POS:<n>/<d>] P:<pitch> D:<num>/<den> )*  EOS
+Sequence layout:
+  BOS [MAKAM:x USUL:y FORM:z [METER:n/d]]  ( [BAR [REM:k]] [POS:k] P:<pitch> D:<num>/<den> )*  EOS
+
+METER (optional) is the notated measure length of the piece. The same usul is written with
+different measure lengths in the collection (e.g. duyek as 4/4 or 8/4), so the usul name
+alone does not fix it.
+
+REM (optional, `rem=True`) follows every BAR and counts the measures that remain after the
+one that starts there (REM:0 = last measure; values above REM_MAX are written REM:many).
+It tells the model how far it is from the end of the piece, and lets the user of the editor
+choose the length of a composition.
 
 POS (optional, `pos=True`) is the notated duration elapsed since the start of the current
 measure, on an eighth-note grid (rounded down). It is a deterministic function of the
@@ -47,24 +57,38 @@ def dur_token(ev: dict) -> str:
     return f"D:{f.numerator}/{f.denominator}"
 
 
-def prefix_tokens(meta: dict) -> list[str]:
-    return [f"MAKAM:{meta['makam']}", f"USUL:{meta['usul']}", f"FORM:{meta['form']}"]
+def prefix_tokens(meta: dict, meter=False) -> list[str]:
+    """`meter`: False = no METER token; otherwise a Fraction, or None for unmetered pieces."""
+    out = [f"MAKAM:{meta['makam']}", f"USUL:{meta['usul']}", f"FORM:{meta['form']}"]
+    return out if meter is False else out + [meter_token(meter)]
 
 
 POS_GRID, POS_MAX = 8, 127
+REM_MAX = 16
+
+
+def rem_token(k: int) -> str:
+    return f"REM:{k}" if k <= REM_MAX else "REM:many"
+
+
+def meter_token(meter) -> str:
+    return f"METER:{meter.numerator}/{meter.denominator}" if meter else "METER:free"
 
 
 def pos_token(f: Fraction) -> str:
     return f"POS:{min(int(f * POS_GRID), POS_MAX)}"
 
 
-def note_tokens(events: list[dict], mode: str, karar: int | None, pos: bool = False) -> list[list[str]]:
-    """One token group per note: [BAR]? [POS]? P D."""
+def note_tokens(events: list[dict], mode: str, karar: int | None, pos: bool = False,
+                rem: bool = False) -> list[list[str]]:
+    """One token group per note: [BAR [REM]]? [POS]? P D."""
     out, running = [], Fraction(0)
+    left = sum(is_bar_start(ev["onset"]) for ev in events)      # measures not yet started
     for ev in events:
         g = []
         if is_bar_start(ev["onset"]):
-            g.append(BAR); running = Fraction(0)
+            g.append(BAR); running = Fraction(0); left -= 1
+            if rem: g.append(rem_token(left))
         if pos:
             g.append(pos_token(running))
         g += [pitch_token(ev, mode, karar), dur_token(ev)]
@@ -83,10 +107,11 @@ class Vocab:
     def encode(self, toks): return [self.stoi.get(t, self.unk) for t in toks]
     def decode(self, ids): return [self.itos[i] for i in ids]
     def kind(self, i: int) -> str:
-        """'pitch', 'dur', 'pos', 'bar' or 'other' for a token id."""
+        """'pitch', 'dur', 'pos', 'rem', 'bar' or 'other' for a token id."""
         t = self.itos[i]
         return ("pitch" if t.startswith("P:") else "dur" if t.startswith("D:") else
-                "pos" if t.startswith("POS:") else "bar" if t == BAR else "other")
+                "pos" if t.startswith("POS:") else "rem" if t.startswith("REM:") else
+                "bar" if t == BAR else "other")
 
     def fraction(self, i: int):
         """Fraction value of a D: token, else None."""

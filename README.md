@@ -34,14 +34,17 @@ SEEDS="1" bash scripts/run_baselines.sh         # single-seed pass first
 bash scripts/run_baselines.sh                   # seeds 1 2 3
 ```
 
-Sequence layout: `BOS MAKAM:x USUL:y FORM:z ( [BAR] [POS:k] P:<pitch> D:<num>/<den> )* EOS`.
+Sequence layout: `BOS MAKAM:x USUL:y FORM:z [METER:n/d] ( [BAR [REM:k]] [POS:k] P:<pitch> D:<num>/<den> )* EOS`.
 
 - Pitch encodings: `tet12` (12-TET, lossy), `aeu` (AEU note names), `koma53` (absolute 53-comma),
   `koma53_rel` (53-comma relative to the makam's karar).
 - `--pos` adds POS tokens: duration elapsed in the current measure on an eighth-note grid.
+- `--meter` adds the notated measure length of the piece to the prefix; `--rem` adds a countdown of
+  the measures remaining after every bar line, which also lets the user choose the piece length.
 - Only rows with `Kod = 9` (regular notes and rests) are used; ornament rows are ignored.
 
-The grid in `run_baselines.sh` covers pitch encoding, architecture, conditioning and POS tokens
+The grid in `run_baselines.sh` covers pitch encoding, architecture, conditioning, POS tokens, meter
+and countdown
 (`SWEEP=1` adds a regularisation sweep). First-round results are archived in `runs/archive_v1/`
 and `reports/baseline_results_v1.md`. Every main run is evaluated for the two usage scenarios of the editor, each
 with free and usul-constrained decoding (`src/generation.py`):

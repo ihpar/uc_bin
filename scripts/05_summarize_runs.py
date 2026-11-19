@@ -26,6 +26,8 @@ def ms(vals, pct=False):
 def label(c):
     extra = []
     if c.get("pos"): extra.append("POS tokens")
+    if c.get("meter"): extra.append("meter")
+    if c.get("rem"): extra.append("countdown")
     if c["model"] == "transformer" and (c["layers"], c["d_model"]) != (6, 256): extra.append(f"{c['layers']}L d{c['d_model']}")
     if c["dropout"] != 0.1: extra.append(f"dropout {c['dropout']}")
     if c["ctx"] != 512: extra.append(f"context {c['ctx']}")
@@ -59,10 +61,10 @@ def gen_table(title, note, base, cols):
         ref = refs.get((base, rep))
         if ref: L.append(f"| *real music ({rep})* | | | | | " + " | ".join(ms([ref.get(q)], pct=p) for q, _, p in cols) + " |")
 
-common = [("scale_overlap", "Scale overlap ↑", False), ("off_scale_rate", "Off-scale ↓", True), ("bar_validity", "Valid measures ↑", True),
+common = [("scale_overlap", "Scale overlap ↑", False), ("off_scale_rate", "Off-scale ↓", True), ("bar_validity", "Valid measures (usul) ↑", True), ("bar_validity_meter", "Valid measures (meter) ↑", True),
           ("copy_rate", "Copy rate", True), ("grammar_ok", "Grammar ok ↑", True)]
 gen_table("Scenario 1: autocomplete", "The model continues a test piece from its first 16 notes for 64 notes.", "gen_prompt16", common)
 gen_table("Scenario 2: composition from scratch", "Only makam, usul and form are given; the model writes until it ends the piece itself.",
-          "gen_prompt0_full", common + [("ends_on_karar", "Ends on karar ↑", True), ("eos_rate", "Ended by model", True), ("mean_notes", "Mean notes", False)])
+          "gen_prompt0_full", common + [("ends_on_karar", "Ends on karar ↑", True), ("eos_rate", "Ended by model", True), ("mean_notes", "Mean notes", False), ("length_ratio", "Length / target", False)])
 open(os.path.join(ROOT, "reports", "baseline_results.md"), "w", encoding="utf-8").write("\n".join(L) + "\n")
 print("\n".join(L))

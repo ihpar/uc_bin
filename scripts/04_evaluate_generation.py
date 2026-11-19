@@ -13,13 +13,15 @@ encodings, and each is also computed on the real test music as a reference value
   scale_overlap   histogram intersection between the generated pitch-class distribution
                   (53 commas, relative to karar) and the makam's training distribution
   off_scale_rate  share of notes on pitch classes that are rare (<0.5%) in the makam
-  bar_validity    share of complete measures whose durations sum to the usul's measure length
+  bar_validity    share of complete measures whose durations sum to the usul's usual measure length
+  bar_validity_meter  the same against the measure length of the target piece itself
   copy_rate       share of 8-note (pitch, duration) n-grams that occur in the training set
   grammar_ok      share of token groups that follow the [BAR] [POS] P D pattern
   --full only:
   ends_on_karar   share of pieces whose last sounded note is the karar of the makam
   eos_rate        share of pieces the model ended itself (before the token limit)
   mean_notes      mean piece length in notes
+  length_ratio    generated measures / measures of the target piece (mean over pieces)
 """
 import argparse, collections, json, os, sys
 from fractions import Fraction
@@ -53,7 +55,8 @@ corpus = D.load_corpus(("train", "val", "test"))
 karar = D.karar_by_makam(corpus["train"]); ae2k = D.ae_to_koma(corpus["train"])
 measure_len = D.measure_lengths(corpus["train"])
 if cfg.get("smoke"): corpus = {k: v[::max(len(v) // 40, 1)] for k, v in corpus.items()}
-D.tokenize_corpus(corpus, cfg["pitch"], karar, cfg["cond"] == "prefix", cfg.get("pos", False))
+D.tokenize_corpus(corpus, cfg["pitch"], karar, cfg["cond"] == "prefix", cfg.get("pos", False),
+                  cfg.get("meter", False), cfg.get("rem", False))
 vocab = D.build_vocab(corpus["train"]) if REF_ONLY else Vocab(vj["itos"])
 D.encode_corpus(corpus, vocab)
 if not REF_ONLY:
@@ -81,6 +84,7 @@ def parse_groups(tokens, makam):
     while i < len(tokens):
         bar = tokens[i] == BAR
         j = i + 1 if bar else i
+        if bar and j < len(tokens) and tokens[j].startswith("REM:"): j += 1
         if j < len(tokens) and tokens[j].startswith("POS:"): j += 1
         if j + 1 < len(tokens) and tokens[j].startswith("P:") and tokens[j + 1].startswith("D:"):
             koma = decode_pitch(tokens[j], cfg["pitch"], k, ae2k)
@@ -94,10 +98,11 @@ def parse_groups(tokens, makam):
 
 
 def stats():
-    return dict(pc=collections.defaultdict(collections.Counter), bars=[0, 0], ng=[0, 0], grp=[0, 0], off=[0, 0],
-                karar=[0, 0], eos=[0, 0], length=[])
+    return dict(pc=collections.defaultdict(collections.Counter), bars=[0, 0], barsm=[0, 0], ng=[0, 0], grp=[0, 0],
+                off=[0, 0], karar=[0, 0], eos=[0, 0], length=[], ratio=[])
 
-def update(st, notes, bad, makam, usul, ended=None):
+def update(st, notes, bad, x, ended=None):
+    makam, usul = x["meta"]["makam"], x["meta"]["usul"]
     ref = pc_ref.get(makam, {}); k = karar.get(makam)
     for _, koma, _ in notes:
         if koma == REST: continue
@@ -106,8 +111,9 @@ def update(st, notes, bad, makam, usul, ended=None):
     st["grp"][0] += len(notes); st["grp"][1] += len(notes) + bad
     idx = [i for i, n in enumerate(notes) if n[0]]          # complete measures: between two BAR flags
     for s, e in zip(idx, idx[1:]):
-        st["bars"][1] += 1
-        st["bars"][0] += sum(n[2] for n in notes[s:e]) == measure_len.get(usul)
+        tot = sum(n[2] for n in notes[s:e])
+        st["bars"][1] += 1; st["bars"][0] += tot == measure_len.get(usul)
+        st["barsm"][1] += 1; st["barsm"][0] += tot == x["meter"]
     seq = [(n[1], n[2]) for n in notes]
     for i in range(len(seq) - N + 1):
         st["ng"][1] += 1; st["ng"][0] += tuple(seq[i:i + N]) in ngrams
@@ -115,6 +121,7 @@ def update(st, notes, bad, makam, usul, ended=None):
         snd = [n[1] for n in notes if n[1] != REST]
         st["karar"][1] += 1; st["karar"][0] += bool(snd) and snd[-1] == k
         st["length"].append(len(notes))
+        if x["n_bars"]: st["ratio"].append(len(idx) / x["n_bars"])
         if ended is not None: st["eos"][1] += 1; st["eos"][0] += ended
 
 def finish(st):
@@ -124,10 +131,12 @@ def finish(st):
         ov += n * sum(min(g.get(i, 0), pc_ref.get(m, {}).get(i, 0)) for i in range(53)); w += n
     r = lambda x: x[0] / x[1] if x[1] else None
     out = dict(scale_overlap=ov / w if w else None, off_scale_rate=r(st["off"]), bar_validity=r(st["bars"]),
+               bar_validity_meter=r(st["barsm"]),
                copy_rate=r(st["ng"]), grammar_ok=r(st["grp"]), notes=st["off"][1], measures=st["bars"][1])
     if a.full:
         out.update(ends_on_karar=r(st["karar"]), eos_rate=r(st["eos"]),
-                   mean_notes=sum(st["length"]) / len(st["length"]) if st["length"] else None)
+                   mean_notes=sum(st["length"]) / len(st["length"]) if st["length"] else None,
+                   length_ratio=sum(st["ratio"]) / len(st["ratio"]) if st["ratio"] else None)
     return out
 
 
@@ -137,27 +146,29 @@ need = a.prompt + (8 if a.full else a.new_notes)
 pieces = [x for x in corpus["test"] if len(x["groups"]) >= need]
 if a.max_pieces: pieces = pieces[:a.max_pieces]
 for x in pieces:
-    m, u = x["meta"]["makam"], x["meta"]["usul"]
     ref_groups = x["groups"][a.prompt:] if a.full else x["groups"][a.prompt:a.prompt + a.new_notes]
-    update(real, *parse_groups(sum(ref_groups, []), m), m, u)
+    update(real, *parse_groups(sum(ref_groups, []), x["meta"]["makam"]), x)
 
 if not REF_ONLY:
     for b in range(0, len(pieces), a.batch):
         chunk = pieces[b:b + a.batch]
-        heads, L, run, pin = [], [], [], []
+        heads, L, run, pin, rem = [], [], [], [], []
+        use_meter = cfg.get("meter", False)
         for x in chunk:
             cut = x["note_starts"][a.prompt] if a.prompt < len(x["note_starts"]) else len(x["ids"]) - 1
             heads.append([vocab.bos] + x["prefix_ids"] + x["ids"][:cut]); pin.append(1 + len(x["prefix_ids"]))
             notes, _ = parse_groups(sum(x["groups"][:a.prompt], []), x["meta"]["makam"])
             r = Fraction(0)                                  # duration elapsed in the prompt's last measure
             for bar, _, d in notes: r = d if bar else r + d
-            run.append(r); L.append(measure_len.get(x["meta"]["usul"]) if a.constrain else None)
+            run.append(r)
+            L.append((x["meter"] if use_meter else measure_len.get(x["meta"]["usul"])) if a.constrain else None)
+            started = sum(1 for bar, _, _ in notes if bar)          # measures already started in the prompt
+            rem.append(x["n_bars"] - started - 1 if cfg.get("rem") else None)
         new, ended = generate_batch(model, heads, vocab, a.max_tokens if a.full else a.new_notes * 5,
                                     None if a.full else a.new_notes, a.temperature, a.top_p, L, run,
-                                    progress=250 if a.full else 0, pinned=pin)
+                                    progress=250 if a.full else 0, pinned=pin, remaining=rem)
         for x, ids, e in zip(chunk, new, ended):
-            m, u = x["meta"]["makam"], x["meta"]["usul"]
-            update(gen, *parse_groups(vocab.decode(ids), m), m, u, e)
+            update(gen, *parse_groups(vocab.decode(ids), x["meta"]["makam"]), x, e)
         print(f"{min(b + a.batch, len(pieces))}/{len(pieces)}", flush=True)
 
 tag = f"gen_prompt{a.prompt}" + ("_full" if a.full else "") + ("_constrained" if a.constrain else "")

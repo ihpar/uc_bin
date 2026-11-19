@@ -23,7 +23,10 @@ def load_corpus(splits=("train", "val", "test", "few_shot")) -> dict:
         ev = p.events
         if len(ev) < 8:
             continue
-        out[row["split"]].append(dict(fname=row["fname"], meta=p.meta, events=ev))
+        bars = [i for i, e in enumerate(ev) if is_bar_start(e["onset"])]
+        lens = collections.Counter(sum(Fraction(q["num"], q["den"]) for q in ev[s:e]) for s, e in zip(bars, bars[1:]))
+        out[row["split"]].append(dict(fname=row["fname"], meta=p.meta, events=ev, n_bars=len(bars),
+                                      meter=lens.most_common(1)[0][0] if lens else None))   # notated measure length
     return out
 
 
@@ -62,12 +65,13 @@ def ae_to_koma(train: list[dict]) -> dict:
     return {a: v.most_common(1)[0][0] for a, v in c.items()}
 
 
-def tokenize_corpus(corpus: dict, mode: str, karar: dict, cond: bool, pos: bool = False):
+def tokenize_corpus(corpus: dict, mode: str, karar: dict, cond: bool, pos: bool = False,
+                    meter: bool = False, rem: bool = False):
     """Adds 'prefix' (token list) and 'groups' (list of per-note token lists) to every piece."""
     for pieces in corpus.values():
         for x in pieces:
-            x["prefix"] = prefix_tokens(x["meta"]) if cond else []
-            x["groups"] = note_tokens(x["events"], mode, karar.get(x["meta"]["makam"]), pos)
+            x["prefix"] = prefix_tokens(x["meta"], x["meter"] if meter else False) if cond else []
+            x["groups"] = note_tokens(x["events"], mode, karar.get(x["meta"]["makam"]), pos, rem)
 
 
 def build_vocab(train: list[dict]) -> Vocab:

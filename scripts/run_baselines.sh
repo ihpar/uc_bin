@@ -43,9 +43,13 @@ for s in $SEEDS; do
   train --model lstm --pitch koma53 --dropout 0.5 --seed "$s"; evaluate_all "$NAME"           # B. architecture
   train --model transformer --pitch koma53 --cond none --seed "$s"; evaluate_all "$NAME"      # C. conditioning
   train --model transformer --pitch koma53 --pos --ctx 768 --seed "$s"; evaluate_all "$NAME"  # D. usul position tokens
-done                                                                   #    (context 768 holds as many notes as 512 without POS)
+                                                                       #    (context 768 holds as many notes as 512 without POS)
+  train --model transformer --pitch koma53 --pos --ctx 768 --meter --seed "$s"; evaluate_all "$NAME"        # E. meter conditioning
+  train --model transformer --pitch koma53 --pos --ctx 768 --meter --rem --seed "$s"; evaluate_all "$NAME"  # F. + measures-remaining countdown
+  train --model lstm --pitch koma53 --dropout 0.5 --pos --meter --rem --seed "$s"; evaluate_all "$NAME"     #    same for the LSTM
+done
 
-if [ "$SWEEP" = "1" ]; then                                              # E. regularisation sweep (seed 1, likelihood only)
+if [ "$SWEEP" = "1" ]; then                                              # G. regularisation sweep (seed 1, likelihood only)
   for do in 0.2 0.3; do train --model transformer --pitch koma53 --dropout "$do" --seed 1; done
   for do in 0.1 0.2; do train --model transformer --pitch koma53 --layers 4 --d_model 192 --dropout "$do" --seed 1; done
   train --model transformer --pitch koma53 --layers 4 --d_model 128 --seed 1

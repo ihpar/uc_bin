@@ -20,6 +20,8 @@ p.add_argument("--model", choices=["transformer", "lstm"], default="transformer"
 p.add_argument("--pitch", choices=PITCH_MODES, default="koma53_rel")
 p.add_argument("--cond", choices=["prefix", "none"], default="prefix", help="makam/usul/form prefix tokens")
 p.add_argument("--pos", action="store_true", help="add POS tokens (duration elapsed in the current measure)")
+p.add_argument("--meter", action="store_true", help="add a METER token (notated measure length) to the prefix")
+p.add_argument("--rem", action="store_true", help="add REM tokens (measures remaining) after every BAR")
 p.add_argument("--ctx", type=int, default=512)
 p.add_argument("--d_model", type=int, default=256)
 p.add_argument("--layers", type=int, default=6)
@@ -45,7 +47,7 @@ if a.smoke:
 cfg = vars(a)
 def auto_name():
     """Non-default hyperparameters are encoded in the run name so that sweeps do not collide."""
-    n = f"{a.model}-{a.pitch}-{a.cond}" + ("-pos" if a.pos else "")
+    n = f"{a.model}-{a.pitch}-{a.cond}" + ("-pos" if a.pos else "") + ("-meter" if a.meter else "") + ("-rem" if a.rem else "")
     if a.model == "transformer" and (a.layers, a.d_model) != (6, 256): n += f"-L{a.layers}d{a.d_model}"
     if a.model == "lstm" and (a.lstm_layers, a.lstm_hidden) != (2, 512): n += f"-L{a.lstm_layers}h{a.lstm_hidden}"
     if a.dropout != 0.1: n += f"-do{a.dropout}"
@@ -64,7 +66,7 @@ corpus = D.load_corpus()
 karar = D.karar_by_makam(corpus["train"], corpus["few_shot"])
 if a.smoke:
     corpus = {k: v[::max(len(v) // 40, 1)] for k, v in corpus.items()}
-D.tokenize_corpus(corpus, a.pitch, karar, a.cond == "prefix", a.pos)
+D.tokenize_corpus(corpus, a.pitch, karar, a.cond == "prefix", a.pos, a.meter, a.rem)
 vocab = D.build_vocab(corpus["train"])
 D.encode_corpus(corpus, vocab)
 n_tok = {k: sum(len(x["ids"]) for x in v) for k, v in corpus.items()}
@@ -89,7 +91,7 @@ def evaluate(pieces):
     per-token perplexity is not comparable across them; bits per note is, with the caveat
     that tet12 predicts a coarser pitch target."""
     model.eval()
-    nll = {"pitch": 0.0, "dur": 0.0, "bar": 0.0, "pos": 0.0, "other": 0.0}; cnt = dict.fromkeys(nll, 0)
+    nll = {"pitch": 0.0, "dur": 0.0, "bar": 0.0, "pos": 0.0, "rem": 0.0, "other": 0.0}; cnt = dict.fromkeys(nll, 0)
     unk = [0]
     kind = [vocab.kind(i) for i in range(len(vocab))]
     buf = []
