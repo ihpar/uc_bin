@@ -1,0 +1,35 @@
+{
+ "run": "transformer-aeu-prefix-s1",
+ "scenario": "gen_prompt0_full",
+ "pieces": 241,
+ "prompt_notes": 0,
+ "new_notes": null,
+ "full": true,
+ "constrained": false,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "generated": {
+  "scale_overlap": 0.7298149096816152,
+  "off_scale_rate": 0.05080992891271414,
+  "bar_validity": 0.18655913978494623,
+  "copy_rate": 0.044002062267863344,
+  "grammar_ok": 0.9986165885486569,
+  "notes": 94391,
+  "measures": 9300,
+  "ends_on_karar": 0.34024896265560167,
+  "eos_rate": 0.9004149377593361,
+  "mean_notes": 401.36099585062243
+ },
+ "reference": {
+  "scale_overlap": 0.8614419807251253,
+  "off_scale_rate": 0.0643089004217933,
+  "bar_validity": 0.7398585783401563,
+  "copy_rate": 0.04545670135364593,
+  "grammar_ok": 0.9999813272584681,
+  "notes": 102894,
+  "measures": 10748,
+  "ends_on_karar": 0.8672199170124482,
+  "eos_rate": null,
+  "mean_notes": 444.42323651452284
+ }
+}

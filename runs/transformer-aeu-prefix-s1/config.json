@@ -2,6 +2,7 @@
  "model": "transformer",
  "pitch": "aeu",
  "cond": "prefix",
+ "pos": false,
  "ctx": 512,
  "d_model": 256,
  "layers": 6,

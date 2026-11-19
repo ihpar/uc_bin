@@ -2,6 +2,7 @@
  "model": "transformer",
  "pitch": "koma53",
  "cond": "prefix",
+ "pos": false,
  "ctx": 512,
  "d_model": 256,
  "layers": 6,

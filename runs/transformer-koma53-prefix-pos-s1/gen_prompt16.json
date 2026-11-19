@@ -1,0 +1,29 @@
+{
+ "run": "transformer-koma53-prefix-pos-s1",
+ "scenario": "gen_prompt16",
+ "pieces": 238,
+ "prompt_notes": 16,
+ "new_notes": 64,
+ "full": false,
+ "constrained": false,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "generated": {
+  "scale_overlap": 0.8718114583347272,
+  "off_scale_rate": 0.007643485975568143,
+  "bar_validity": 0.8312101910828026,
+  "copy_rate": 0.02926433731387292,
+  "grammar_ok": 1.0,
+  "notes": 14653,
+  "measures": 1570
+ },
+ "reference": {
+  "scale_overlap": 0.9072179674458668,
+  "off_scale_rate": 0.014687798879628365,
+  "bar_validity": 0.783109404990403,
+  "copy_rate": 0.08830900781365178,
+  "grammar_ok": 1.0,
+  "notes": 14638,
+  "measures": 1563
+ }
+}

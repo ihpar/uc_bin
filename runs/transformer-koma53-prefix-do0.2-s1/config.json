@@ -1,0 +1,23 @@
+{
+ "model": "transformer",
+ "pitch": "koma53",
+ "cond": "prefix",
+ "pos": false,
+ "ctx": 512,
+ "d_model": 256,
+ "layers": 6,
+ "heads": 4,
+ "lstm_layers": 2,
+ "lstm_hidden": 512,
+ "dropout": 0.2,
+ "batch": 64,
+ "lr": 0.0003,
+ "weight_decay": 0.01,
+ "warmup": 500,
+ "steps": 20000,
+ "eval_every": 500,
+ "patience": 6,
+ "seed": 1,
+ "name": null,
+ "smoke": false
+}

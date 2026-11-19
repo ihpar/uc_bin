@@ -1,0 +1,35 @@
+{
+ "run": "transformer-tet12-prefix-s1",
+ "scenario": "gen_prompt0_full_constrained",
+ "pieces": 241,
+ "prompt_notes": 0,
+ "new_notes": null,
+ "full": true,
+ "constrained": true,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "generated": {
+  "scale_overlap": 0.7418308383589315,
+  "off_scale_rate": 0.12945661599882194,
+  "bar_validity": 0.9843101659751037,
+  "copy_rate": 0.030245654125520282,
+  "grammar_ok": 0.9999205807138205,
+  "notes": 61117,
+  "measures": 7712,
+  "ends_on_karar": 0.33195020746887965,
+  "eos_rate": 0.995850622406639,
+  "mean_notes": 261.2116182572614
+ },
+ "reference": {
+  "scale_overlap": 0.7685342517904852,
+  "off_scale_rate": 0.14140491369926916,
+  "bar_validity": 0.7398585783401563,
+  "copy_rate": 0.03387370637728726,
+  "grammar_ok": 1.0,
+  "notes": 102896,
+  "measures": 10748,
+  "ends_on_karar": 0.8547717842323651,
+  "eos_rate": null,
+  "mean_notes": 444.43153526970957
+ }
+}
