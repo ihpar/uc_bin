@@ -43,6 +43,7 @@ for s in $SEEDS; do
   train --model lstm --pitch koma53_rel --seed "$s"; evaluate_all "$NAME"          # B. architecture
   train --model transformer --pitch koma53_rel --cond none --seed "$s"; evaluate_all "$NAME"   # C. conditioning
   train --model transformer --pitch koma53 --pos --seed "$s"; evaluate_all "$NAME"  # D. usul position tokens
+  train --model transformer --pitch koma53 --pos --ctx 768 --seed "$s"; evaluate_all "$NAME"   #    same musical context as the runs without POS
 done
 
 if [ "$SWEEP" = "1" ]; then                                              # E. regularisation sweep (seed 1, likelihood only)

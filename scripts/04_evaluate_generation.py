@@ -144,17 +144,17 @@ for x in pieces:
 if not REF_ONLY:
     for b in range(0, len(pieces), a.batch):
         chunk = pieces[b:b + a.batch]
-        heads, L, run = [], [], []
+        heads, L, run, pin = [], [], [], []
         for x in chunk:
             cut = x["note_starts"][a.prompt] if a.prompt < len(x["note_starts"]) else len(x["ids"]) - 1
-            heads.append([vocab.bos] + x["prefix_ids"] + x["ids"][:cut])
+            heads.append([vocab.bos] + x["prefix_ids"] + x["ids"][:cut]); pin.append(1 + len(x["prefix_ids"]))
             notes, _ = parse_groups(sum(x["groups"][:a.prompt], []), x["meta"]["makam"])
             r = Fraction(0)                                  # duration elapsed in the prompt's last measure
             for bar, _, d in notes: r = d if bar else r + d
             run.append(r); L.append(measure_len.get(x["meta"]["usul"]) if a.constrain else None)
         new, ended = generate_batch(model, heads, vocab, a.max_tokens if a.full else a.new_notes * 5,
                                     None if a.full else a.new_notes, a.temperature, a.top_p, L, run,
-                                    progress=250 if a.full else 0)
+                                    progress=250 if a.full else 0, pinned=pin)
         for x, ids, e in zip(chunk, new, ended):
             m, u = x["meta"]["makam"], x["meta"]["usul"]
             update(gen, *parse_groups(vocab.decode(ids), m), m, u, e)

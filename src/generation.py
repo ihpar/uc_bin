@@ -16,9 +16,12 @@ from .tokenizer import pos_token
 def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_notes: int | None = None,
                    temperature: float = 1.0, top_p: float = 0.95,
                    measure_len: list | None = None, running: list | None = None,
-                   progress: int = 0):
+                   progress: int = 0, pinned: list | None = None):
     """heads: prompt token ids per sequence. measure_len[i] is a Fraction (or None for no
     constraint); running[i] is the duration already elapsed in the current measure of the prompt.
+    pinned[i] is the number of leading tokens (BOS + conditioning prefix) that must stay
+    visible when the sequence outgrows the context window, exactly as in training, where
+    every window starts with BOS + prefix.
     Returns the newly generated ids per sequence and whether each ended with EOS."""
     model.eval()
     dev = next(model.parameters()).device
@@ -28,10 +31,12 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
     dur_ids = [i for i in range(V) if kind[i] == "dur"]
     has_pos = any(k == "pos" for k in kind)
     pos_id = lambda r: vocab.stoi.get(pos_token(r))
+    group_start = ("bar", "pos") if has_pos else ("bar", "pitch")
     seqs = [list(h) for h in heads]; new = [[] for _ in range(n)]
     done = [False] * n; eos = [False] * n; notes = [0] * n
     run = [Fraction(r) if r is not None else Fraction(0) for r in (running or [0] * n)]
     L = measure_len or [None] * n
+    pin = pinned or [0] * n
     # what the previous token was: decides which constraint applies next
     last = [kind[h[-1]] if h and kind[h[-1]] in ("pitch", "dur", "pos", "bar") else "start" for h in heads]
 
@@ -41,10 +46,16 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
         if progress and step and step % progress == 0:
             print(f"    step {step}/{max_new}, {len(act)}/{n} sequences still running", flush=True)
         T = min(max(len(seqs[i]) for i in act), model.ctx)
+        T = min(-(-T // 64) * 64, model.ctx)       # round up: fewer distinct tensor sizes on the GPU
         X = torch.full((len(act), T), vocab.pad, dtype=torch.long)
         idx = []
         for r, i in enumerate(act):
-            w = seqs[i][-model.ctx:]; X[r, :len(w)] = torch.tensor(w); idx.append(len(w) - 1)
+            w = seqs[i]
+            if len(w) > model.ctx:                 # keep BOS + prefix, then the most recent tokens
+                k = pin[i]; cut = len(w) - (model.ctx - k)
+                while kind[w[cut]] not in group_start: cut += 1     # start on a note boundary, as in training
+                w = w[:k] + w[cut:]
+            X[r, :len(w)] = torch.tensor(w); idx.append(len(w) - 1)
         logits = model(X.to(dev)).float()[torch.arange(len(act)), torch.tensor(idx)].cpu() / temperature
         for r, i in enumerate(act):
             if L[i] is None: continue

@@ -49,6 +49,7 @@ def auto_name():
     if a.model == "transformer" and (a.layers, a.d_model) != (6, 256): n += f"-L{a.layers}d{a.d_model}"
     if a.model == "lstm" and (a.lstm_layers, a.lstm_hidden) != (2, 512): n += f"-L{a.lstm_layers}h{a.lstm_hidden}"
     if a.dropout != 0.1: n += f"-do{a.dropout}"
+    if a.ctx != 512 and not a.smoke: n += f"-ctx{a.ctx}"
     return n + f"-s{a.seed}" + ("-smoke" if a.smoke else "")
 name = a.name or auto_name()
 if a.print_name:
