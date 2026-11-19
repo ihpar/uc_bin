@@ -131,6 +131,7 @@ def finish(st):
     return out
 
 
+print(f"[{os.path.basename(a.run.rstrip('/'))}] prompt={a.prompt} full={a.full} constrain={a.constrain} device={dev}", flush=True)
 gen, real = stats(), stats()
 need = a.prompt + (8 if a.full else a.new_notes)
 pieces = [x for x in corpus["test"] if len(x["groups"]) >= need]
@@ -152,7 +153,8 @@ if not REF_ONLY:
             for bar, _, d in notes: r = d if bar else r + d
             run.append(r); L.append(measure_len.get(x["meta"]["usul"]) if a.constrain else None)
         new, ended = generate_batch(model, heads, vocab, a.max_tokens if a.full else a.new_notes * 5,
-                                    None if a.full else a.new_notes, a.temperature, a.top_p, L, run)
+                                    None if a.full else a.new_notes, a.temperature, a.top_p, L, run,
+                                    progress=250 if a.full else 0)
         for x, ids, e in zip(chunk, new, ended):
             m, u = x["meta"]["makam"], x["meta"]["usul"]
             update(gen, *parse_groups(vocab.decode(ids), m), m, u, e)

@@ -15,7 +15,8 @@ from .tokenizer import pos_token
 @torch.no_grad()
 def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_notes: int | None = None,
                    temperature: float = 1.0, top_p: float = 0.95,
-                   measure_len: list | None = None, running: list | None = None):
+                   measure_len: list | None = None, running: list | None = None,
+                   progress: int = 0):
     """heads: prompt token ids per sequence. measure_len[i] is a Fraction (or None for no
     constraint); running[i] is the duration already elapsed in the current measure of the prompt.
     Returns the newly generated ids per sequence and whether each ended with EOS."""
@@ -34,9 +35,11 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
     # what the previous token was: decides which constraint applies next
     last = [kind[h[-1]] if h and kind[h[-1]] in ("pitch", "dur", "pos", "bar") else "start" for h in heads]
 
-    for _ in range(max_new):
+    for step in range(max_new):
         act = [i for i in range(n) if not done[i]]
         if not act: break
+        if progress and step and step % progress == 0:
+            print(f"    step {step}/{max_new}, {len(act)}/{n} sequences still running", flush=True)
         T = min(max(len(seqs[i]) for i in act), model.ctx)
         X = torch.full((len(act), T), vocab.pad, dtype=torch.long)
         idx = []
