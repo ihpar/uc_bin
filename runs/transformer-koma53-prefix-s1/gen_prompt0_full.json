@@ -9,16 +9,16 @@
  "temperature": 1.0,
  "top_p": 0.95,
  "generated": {
-  "scale_overlap": 0.8455665218736751,
-  "off_scale_rate": 0.005599786108965599,
-  "bar_validity": 0.29185613890037204,
-  "copy_rate": 0.05283728366914889,
-  "grammar_ok": 0.999884463187083,
-  "notes": 67324,
-  "measures": 7257,
-  "ends_on_karar": 0.3236514522821577,
-  "eos_rate": 0.979253112033195,
-  "mean_notes": 287.2780082987552
+  "scale_overlap": 0.8177824555723114,
+  "off_scale_rate": 0.005441816060252467,
+  "bar_validity": 0.22053588158141277,
+  "copy_rate": 0.057527642404234136,
+  "grammar_ok": 0.9997940734334136,
+  "notes": 94270,
+  "measures": 10674,
+  "ends_on_karar": 0.36099585062240663,
+  "eos_rate": 0.9045643153526971,
+  "mean_notes": 402.9128630705394
  },
  "reference": {
   "scale_overlap": 0.9219755817905887,

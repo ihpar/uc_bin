@@ -19,6 +19,7 @@ Bits per note are comparable across encodings; per-token perplexity is not. `tet
 | transformer | koma53 | prefix | dropout 0.2 | 1 | 4.97M | 8000 | 2.250 | 1.326 | 0.791 | 2.614 | 0.0% |
 | transformer | koma53 | prefix | dropout 0.3 | 1 | 4.97M | 17500 | 2.195 | 1.287 | 0.771 | 2.561 | 0.0% |
 | transformer | koma53 | prefix | POS tokens | 1 | 5.00M | 4000 | 2.434 | 1.438 | 0.863 | 2.785 | 0.0% |
+| transformer | koma53 | prefix | POS tokens, context 768 | 1 | 5.07M | 4500 | 2.125 | 1.269 | 0.744 | 2.487 | 0.0% |
 | transformer | koma53_rel | none | – | 1 | 4.92M | 4000 | 2.235 | 1.318 | 0.777 | 2.828 | 0.0% |
 | transformer | koma53_rel | prefix | – | 1 | 4.98M | 4000 | 2.265 | 1.342 | 0.790 | 2.863 | 0.0% |
 | transformer | tet12 | prefix | – | 1 | 4.95M | 4500 | 2.165 | 1.262 | 0.775 | 2.531 | 0.0% |
@@ -37,6 +38,8 @@ The model continues a test piece from its first 16 notes for 64 notes.
 | transformer | koma53 | prefix | – | constrained | 0.887 | 0.8% | 98.4% | 6.0% | 100.0% |
 | transformer | koma53 | prefix | POS tokens | free | 0.872 | 0.8% | 83.1% | 2.9% | 100.0% |
 | transformer | koma53 | prefix | POS tokens | constrained | 0.866 | 0.9% | 99.3% | 2.9% | 100.0% |
+| transformer | koma53 | prefix | POS tokens, context 768 | free | 0.870 | 0.6% | 78.1% | 5.4% | 100.0% |
+| transformer | koma53 | prefix | POS tokens, context 768 | constrained | 0.866 | 0.7% | 98.9% | 4.5% | 100.0% |
 | transformer | koma53_rel | none | – | free | 0.863 | 2.0% | 28.3% | 3.7% | 100.0% |
 | transformer | koma53_rel | none | – | constrained | 0.861 | 2.5% | 98.8% | 4.1% | 100.0% |
 | transformer | koma53_rel | prefix | – | free | 0.878 | 0.5% | 31.0% | 4.1% | 100.0% |
@@ -52,19 +55,21 @@ Only makam, usul and form are given; the model writes until it ends the piece it
 
 | Model | Pitch | Cond | Variant | Decoding | Scale overlap ↑ | Off-scale ↓ | Valid measures ↑ | Copy rate | Grammar ok ↑ | Ends on karar ↑ | Ended by model | Mean notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| lstm | koma53_rel | prefix | – | free | 0.816 | 7.1% | 20.8% | 3.2% | 100.0% | 87.1% | 82.2% | 653.950 |
-| lstm | koma53_rel | prefix | – | constrained | 0.800 | 6.9% | 97.6% | 3.8% | 100.0% | 76.3% | 72.2% | 779.120 |
-| transformer | aeu | prefix | – | free | 0.730 | 5.1% | 18.7% | 4.4% | 99.9% | 34.0% | 90.0% | 401.361 |
-| transformer | aeu | prefix | – | constrained | 0.763 | 5.3% | 98.5% | 5.2% | 100.0% | 38.2% | 91.7% | 372.934 |
-| transformer | koma53 | prefix | – | free | 0.846 | 0.6% | 29.2% | 5.3% | 100.0% | 32.4% | 97.9% | 287.278 |
-| transformer | koma53 | prefix | – | constrained | 0.855 | 1.0% | 98.6% | 5.5% | 100.0% | 41.5% | 99.2% | 264.407 |
-| transformer | koma53 | prefix | POS tokens | free | 0.823 | 0.8% | 79.4% | 5.0% | 100.0% | 40.7% | 90.9% | 272.917 |
-| transformer | koma53 | prefix | POS tokens | constrained | 0.825 | 1.7% | 99.9% | 2.1% | 99.9% | 9.5% | 5.0% | 920.054 |
-| transformer | koma53_rel | none | – | free | 0.514 | 24.4% | 11.8% | 3.3% | 100.0% | 50.2% | 88.0% | 417.432 |
-| transformer | koma53_rel | none | – | constrained | 0.524 | 28.3% | 97.2% | 3.0% | 100.0% | 58.1% | 92.5% | 360.286 |
-| transformer | koma53_rel | prefix | – | free | 0.873 | 0.7% | 22.7% | 3.7% | 100.0% | 44.4% | 99.2% | 271.241 |
-| transformer | koma53_rel | prefix | – | constrained | 0.862 | 1.3% | 98.3% | 5.5% | 100.0% | 45.2% | 99.6% | 258.531 |
-| transformer | tet12 | prefix | – | free | 0.700 | 11.9% | 25.0% | 2.9% | 99.8% | 27.0% | 95.9% | 323.983 |
-| transformer | tet12 | prefix | – | constrained | 0.742 | 12.9% | 98.4% | 3.0% | 100.0% | 33.2% | 99.6% | 261.212 |
+| lstm | koma53_rel | prefix | – | free | 0.811 | 6.3% | 22.5% | 3.2% | 100.0% | 83.4% | 82.2% | 633.257 |
+| lstm | koma53_rel | prefix | – | constrained | 0.812 | 6.2% | 98.9% | 3.9% | 100.0% | 77.6% | 73.4% | 754.104 |
+| transformer | aeu | prefix | – | free | 0.740 | 4.5% | 21.6% | 3.9% | 100.0% | 41.1% | 74.3% | 605.959 |
+| transformer | aeu | prefix | – | constrained | 0.772 | 5.6% | 98.5% | 6.4% | 100.0% | 40.2% | 78.8% | 569.963 |
+| transformer | koma53 | prefix | – | free | 0.818 | 0.5% | 22.1% | 5.8% | 100.0% | 36.1% | 90.5% | 402.913 |
+| transformer | koma53 | prefix | – | constrained | 0.815 | 0.8% | 99.2% | 5.7% | 100.0% | 42.3% | 91.3% | 401.780 |
+| transformer | koma53 | prefix | POS tokens | free | 0.842 | 1.0% | 79.1% | 3.9% | 99.1% | 39.8% | 66.8% | 498.552 |
+| transformer | koma53 | prefix | POS tokens | constrained | 0.839 | 1.3% | 99.9% | 2.1% | 99.9% | 14.5% | 1.7% | 940.469 |
+| transformer | koma53 | prefix | POS tokens, context 768 | free | 0.811 | 1.0% | 75.6% | 6.9% | 99.7% | 31.1% | 67.2% | 545.477 |
+| transformer | koma53 | prefix | POS tokens, context 768 | constrained | 0.832 | 0.3% | 99.4% | 3.3% | 99.9% | 15.8% | 6.2% | 924.303 |
+| transformer | koma53_rel | none | – | free | 0.545 | 26.8% | 7.7% | 1.5% | 100.0% | 61.4% | 86.7% | 466.763 |
+| transformer | koma53_rel | none | – | constrained | 0.541 | 27.7% | 97.8% | 2.2% | 100.0% | 61.8% | 88.8% | 431.112 |
+| transformer | koma53_rel | prefix | – | free | 0.810 | 1.4% | 20.1% | 5.1% | 100.0% | 47.3% | 87.6% | 442.656 |
+| transformer | koma53_rel | prefix | – | constrained | 0.826 | 0.3% | 97.8% | 4.9% | 100.0% | 54.8% | 92.9% | 379.187 |
+| transformer | tet12 | prefix | – | free | 0.694 | 11.0% | 23.1% | 2.3% | 100.0% | 32.8% | 83.8% | 511.017 |
+| transformer | tet12 | prefix | – | constrained | 0.713 | 12.0% | 99.2% | 5.4% | 100.0% | 44.0% | 82.6% | 507.647 |
 | *real music (53-comma)* | | | | | 0.922 | 2.2% | 74.0% | 5.8% | 100.0% | 96.7% | – | 444.432 |
 | *real music (12-TET)* | | | | | 0.769 | 14.1% | 74.0% | 3.4% | 100.0% | 85.5% | – | 444.432 |
