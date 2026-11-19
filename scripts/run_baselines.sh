@@ -2,11 +2,11 @@
 # Experiment grid for the preliminary study. Run on a GPU machine from the repo root:
 #   SEEDS="1" bash scripts/run_baselines.sh    # single-seed pass (do this first)
 #   bash scripts/run_baselines.sh              # seeds 1 2 3
-#   SWEEP=0 bash scripts/run_baselines.sh      # skip the regularisation sweep
+#   SWEEP=1 bash scripts/run_baselines.sh      # also run the regularisation sweep
 # Finished steps are skipped, so the script can be restarted at any time.
 set -euo pipefail
 SEEDS=${SEEDS:-"1 2 3"}
-SWEEP=${SWEEP:-1}
+SWEEP=${SWEEP:-0}
 
 train () {   # all arguments are passed to the training script; echoes nothing, sets $NAME
   NAME=$(python scripts/03_train_baseline.py "$@" --print_name)
@@ -37,19 +37,17 @@ evaluate_all () {   # the two usage scenarios, each with free and usul-constrain
 }
 
 for s in $SEEDS; do
-  for pitch in tet12 aeu koma53 koma53_rel; do                         # A. pitch encoding
+  for pitch in tet12 aeu koma53; do                                    # A. pitch encoding
     train --model transformer --pitch "$pitch" --seed "$s"; evaluate_all "$NAME"
   done
-  train --model lstm --pitch koma53_rel --seed "$s"; evaluate_all "$NAME"          # B. architecture
-  train --model transformer --pitch koma53_rel --cond none --seed "$s"; evaluate_all "$NAME"   # C. conditioning
-  train --model transformer --pitch koma53 --pos --seed "$s"; evaluate_all "$NAME"  # D. usul position tokens
-  train --model transformer --pitch koma53 --pos --ctx 768 --seed "$s"; evaluate_all "$NAME"   #    same musical context as the runs without POS
-done
+  train --model lstm --pitch koma53 --dropout 0.5 --seed "$s"; evaluate_all "$NAME"           # B. architecture
+  train --model transformer --pitch koma53 --cond none --seed "$s"; evaluate_all "$NAME"      # C. conditioning
+  train --model transformer --pitch koma53 --pos --ctx 768 --seed "$s"; evaluate_all "$NAME"  # D. usul position tokens
+done                                                                   #    (context 768 holds as many notes as 512 without POS)
 
 if [ "$SWEEP" = "1" ]; then                                              # E. regularisation sweep (seed 1, likelihood only)
   for do in 0.2 0.3; do train --model transformer --pitch koma53 --dropout "$do" --seed 1; done
   for do in 0.1 0.2; do train --model transformer --pitch koma53 --layers 4 --d_model 192 --dropout "$do" --seed 1; done
   train --model transformer --pitch koma53 --layers 4 --d_model 128 --seed 1
-  for do in 0.3 0.5; do train --model lstm --pitch koma53_rel --dropout "$do" --seed 1; done
 fi
 python scripts/05_summarize_runs.py

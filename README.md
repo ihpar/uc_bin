@@ -41,8 +41,9 @@ Sequence layout: `BOS MAKAM:x USUL:y FORM:z ( [BAR] [POS:k] P:<pitch> D:<num>/<d
 - `--pos` adds POS tokens: duration elapsed in the current measure on an eighth-note grid.
 - Only rows with `Kod = 9` (regular notes and rests) are used; ornament rows are ignored.
 
-The grid in `run_baselines.sh` covers pitch encoding, architecture, conditioning, POS tokens and a
-regularisation sweep. Every main run is evaluated for the two usage scenarios of the editor, each
+The grid in `run_baselines.sh` covers pitch encoding, architecture, conditioning and POS tokens
+(`SWEEP=1` adds a regularisation sweep). First-round results are archived in `runs/archive_v1/`
+and `reports/baseline_results_v1.md`. Every main run is evaluated for the two usage scenarios of the editor, each
 with free and usul-constrained decoding (`src/generation.py`):
 
 1. **Autocomplete:** continue a test piece from its first 16 notes.

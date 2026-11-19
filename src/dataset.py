@@ -91,7 +91,15 @@ def encode_corpus(corpus: dict, vocab: Vocab):
 
 class WindowSampler:
     """Random training windows: BOS + prefix + a slice of the piece starting on a note boundary.
-    Targets for the prefix positions are masked so the model is not trained to guess the labels."""
+    Targets for the prefix positions are masked so the model is not trained to guess the labels.
+
+    The window position is drawn so that every token of a piece is covered equally often:
+    windows may hang over either end of the piece and are then simply shorter. This matters
+    for generation. Windows that begin at the first note teach the model how pieces open
+    (composition from scratch), and endings appear at every position of the window, so the
+    model cannot predict the end of a piece from the position alone."""
+
+    MIN_TOKENS = 16
 
     def __init__(self, pieces: list[dict], vocab: Vocab, ctx: int, seed: int):
         self.pieces, self.vocab, self.ctx = pieces, vocab, ctx
@@ -103,13 +111,13 @@ class WindowSampler:
         Y = torch.full((bs, self.ctx), -100, dtype=torch.long)
         for b, x in enumerate(self.rng.choices(self.pieces, weights=self.weights, k=bs)):
             head = [self.vocab.bos] + x["prefix_ids"]
-            room = self.ctx + 1 - len(head)
-            s = self.rng.choice(x["note_starts"]) if len(x["ids"]) > room else 0
-            if len(x["ids"]) - s < room and len(x["ids"]) > room:
-                s = max(st for st in x["note_starts"] if st <= len(x["ids"]) - room)
-            seq = head + x["ids"][s:s + room]
-            n = len(seq) - 1
-            X[b, :n] = torch.tensor(seq[:-1]); Y[b, :n] = torch.tensor(seq[1:])
+            room = self.ctx + 1 - len(head); n = len(x["ids"])
+            s0 = self.rng.randint(self.MIN_TOKENS - room, max(n - self.MIN_TOKENS, 0))
+            s = max((st for st in x["note_starts"] if st <= max(s0, 0)), default=0)
+            e = min((s0 if s0 < 0 else s) + room, n)
+            seq = head + x["ids"][s:e]
+            m = len(seq) - 1
+            X[b, :m] = torch.tensor(seq[:-1]); Y[b, :m] = torch.tensor(seq[1:])
             Y[b, :len(head) - 1] = -100
         return X.to(device), Y.to(device)
 

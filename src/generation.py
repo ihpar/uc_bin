@@ -2,7 +2,8 @@
 
 Constraint (hard, applied at decoding time; works with any encoding):
   * a duration longer than what is left in the current measure is masked out,
-  * BAR is forced exactly when the measure is full and forbidden otherwise,
+  * BAR is forbidden inside a measure; when the measure is full the model may only start
+    the next measure (BAR) or end the piece (EOS), so pieces end on a complete measure,
   * a POS token, if the encoding uses them, is forced to the true running position.
 The measure length comes from the usul (most frequent measure length in training).
 """
@@ -60,13 +61,16 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
         for r, i in enumerate(act):
             if L[i] is None: continue
             if last[i] in ("dur", "start"):                 # group boundary
-                if run[i] >= L[i] or last[i] == "start" and run[i] == 0:
-                    forced = vocab.bar
-                else:
-                    logits[r, vocab.bar] = float("-inf"); forced = None
-                    if has_pos: forced = pos_id(run[i])
-                if forced is not None:
-                    m = torch.full((V,), float("-inf")); m[forced] = 0.0; logits[r] = m
+                allowed = None
+                if last[i] == "start" and run[i] == 0:
+                    allowed = [vocab.bar]                   # a piece starts with a bar line
+                elif run[i] >= L[i]:
+                    allowed = [vocab.bar, vocab.eos]        # measure is full: next measure, or end the piece
+                else:                                       # inside a measure: no bar line, no ending
+                    logits[r, vocab.bar] = float("-inf"); logits[r, vocab.eos] = float("-inf")
+                    if has_pos and pos_id(run[i]) is not None: allowed = [pos_id(run[i])]
+                if allowed is not None:
+                    m = torch.full((V,), float("-inf")); m[allowed] = 0.0; logits[r] = logits[r] + m
             elif last[i] == "bar" and has_pos and pos_id(Fraction(0)) is not None:
                 m = torch.full((V,), float("-inf")); m[pos_id(Fraction(0))] = 0.0; logits[r] = m
             elif last[i] == "pitch":                        # duration must fit the measure
