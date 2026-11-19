@@ -1,0 +1,29 @@
+{
+ "run": "transformer-aeu-prefix-s1",
+ "scenario": "gen_prompt16_constrained",
+ "pieces": 238,
+ "prompt_notes": 16,
+ "new_notes": 64,
+ "full": false,
+ "constrained": true,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "generated": {
+  "scale_overlap": 0.8237105014233591,
+  "off_scale_rate": 0.05393646408839779,
+  "bar_validity": 0.9838613269575612,
+  "copy_rate": 0.04399551066217733,
+  "grammar_ok": 0.9999334752527941,
+  "notes": 14480,
+  "measures": 1673
+ },
+ "reference": {
+  "scale_overlap": 0.8463613094442026,
+  "off_scale_rate": 0.05950266429840142,
+  "bar_validity": 0.783109404990403,
+  "copy_rate": 0.06693203597228366,
+  "grammar_ok": 1.0,
+  "notes": 14638,
+  "measures": 1563
+ }
+}

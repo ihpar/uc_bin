@@ -1,0 +1,29 @@
+{
+ "run": "transformer-tet12-prefix-s1",
+ "scenario": "gen_prompt16_constrained",
+ "pieces": 238,
+ "prompt_notes": 16,
+ "new_notes": 64,
+ "full": false,
+ "constrained": true,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "generated": {
+  "scale_overlap": 0.7488378249706944,
+  "off_scale_rate": 0.132974687909511,
+  "bar_validity": 0.9895320197044335,
+  "copy_rate": 0.042462368007189395,
+  "grammar_ok": 0.9997337415962191,
+  "notes": 14499,
+  "measures": 1624
+ },
+ "reference": {
+  "scale_overlap": 0.761419686879583,
+  "off_scale_rate": 0.14031971580817051,
+  "bar_validity": 0.783109404990403,
+  "copy_rate": 0.04769276131505234,
+  "grammar_ok": 1.0,
+  "notes": 14638,
+  "measures": 1563
+ }
+}
