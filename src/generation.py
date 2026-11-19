@@ -54,7 +54,9 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
             w = seqs[i]
             if len(w) > model.ctx:                 # keep BOS + prefix, then the most recent tokens
                 k = pin[i]; cut = len(w) - (model.ctx - k)
-                while kind[w[cut]] not in group_start: cut += 1     # start on a note boundary, as in training
+                for c in range(cut, min(cut + 8, len(w))):          # start on a note boundary, as in training
+                    if kind[w[c]] in group_start:
+                        cut = c; break                              # (keep the plain cut if none is near)
                 w = w[:k] + w[cut:]
             X[r, :len(w)] = torch.tensor(w); idx.append(len(w) - 1)
         logits = model(X.to(dev)).float()[torch.arange(len(act)), torch.tensor(idx)].cpu() / temperature
