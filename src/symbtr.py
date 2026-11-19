@@ -41,37 +41,37 @@ class Piece:
     rows: list = field(default_factory=list)   # all rows as dicts (original column names)
 
     @property
-    def notes(self):
-        """Notes and rests as (koma53, numerator, denominator, ms, offset)."""
-        out = []
+    def events(self):
+        """Every row that occupies time, as dicts with onset/offset in measures:
+        koma (Koma53, REST for rests), ae (AEU note name), num/den (notated duration as a
+        fraction of a whole note), onset, offset, kod (SymbTr row code).
+
+        A row occupies time when its Offset is later than that of the previous row. Besides
+        regular notes and rests (code 9) this covers notes that carry an ornament or
+        articulation (tremolo, trill, mordent, glissando, notes with a grace note, small
+        notes, ...), which SymbTr stores under their own codes, and the few rests stored with
+        a tempo change. Grace notes without a duration of their own (code 8) and pure
+        markers (usul/tempo changes, layout codes) are skipped. See the SymbTr code table."""
+        out, prev = [], 0.0
         for r in self.rows:
-            if r["Kod"] != NOTE_CODE:
-                continue
             try:
-                out.append((int(r["Koma53"]), int(r["Pay"]), int(r["Payda"]),
-                            int(r["Ms"]), float(r["Offset"])))
+                num, den, off = int(r["Pay"]), int(r["Payda"]), float(r["Offset"])
             except ValueError:
                 continue
+            if off - prev <= 1e-6:
+                continue                      # marker or zero-length grace note
+            if num > 0 and den > 0:
+                try: koma = int(r["Koma53"])
+                except ValueError: koma = REST
+                out.append(dict(koma=koma if koma > 0 else REST, ae=r["NotaAE"], num=num, den=den,
+                                onset=prev, offset=off, kod=r["Kod"]))
+            prev = off
         return out
 
     @property
-    def events(self):
-        """Notes and rests as dicts with onset/offset in measures:
-        koma (Koma53, REST for rests), ae (AEU note name), num/den (notated
-        duration as a fraction of a whole note), onset, offset."""
-        out, prev = [], 0.0
-        for r in self.rows:
-            if r["Kod"] != NOTE_CODE:
-                continue
-            try:
-                koma, num, den, off = int(r["Koma53"]), int(r["Pay"]), int(r["Payda"]), float(r["Offset"])
-            except ValueError:
-                continue
-            if num <= 0 or den <= 0:
-                continue
-            out.append(dict(koma=koma, ae=r["NotaAE"], num=num, den=den, onset=prev, offset=off))
-            prev = off
-        return out
+    def notes(self):
+        """Time-occupying rows as (koma53, numerator, denominator, ms, offset) tuples."""
+        return [(e["koma"], e["num"], e["den"], 0, e["offset"]) for e in self.events]
 
 
 def load_piece(fname: str, txt_dir: str = TXT_DIR) -> Piece:

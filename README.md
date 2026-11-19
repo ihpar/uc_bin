@@ -41,7 +41,9 @@ Sequence layout: `BOS MAKAM:x USUL:y FORM:z [METER:n/d] ( [BAR [REM:k]] [POS:k] 
 - `--pos` adds POS tokens: duration elapsed in the current measure on an eighth-note grid.
 - `--meter` adds the notated measure length of the piece to the prefix; `--rem` adds a countdown of
   the measures remaining after every bar line, which also lets the user choose the piece length.
-- Only rows with `Kod = 9` (regular notes and rests) are used; ornament rows are ignored.
+- Every row that occupies time is used as a note or rest: regular notes (`Kod = 9`) and notes stored
+  under ornament codes (tremolo, trill, mordent, glissando, ...). The ornament itself is not modelled
+  yet. Grace notes without their own duration and marker rows are skipped.
 
 The grid in `run_baselines.sh` covers pitch encoding, architecture, conditioning, POS tokens, meter
 and countdown
