@@ -3,7 +3,8 @@ from __future__ import annotations
 import collections, csv, os, random
 import torch
 from .symbtr import load_piece, REST
-from .tokenizer import Vocab, note_tokens, prefix_tokens, BOS, EOS
+from fractions import Fraction
+from .tokenizer import Vocab, note_tokens, prefix_tokens, is_bar_start, BOS, EOS
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 
@@ -12,7 +13,7 @@ def load_split_table(path: str | None = None) -> list[dict]:
     return list(csv.DictReader(open(path or os.path.join(ROOT, "data", "splits.csv"), encoding="utf-8")))
 
 
-def load_corpus(splits=("train", "val", "test")) -> dict:
+def load_corpus(splits=("train", "val", "test", "few_shot")) -> dict:
     """{split: [dict(fname, meta, events)]}"""
     out = collections.defaultdict(list)
     for row in load_split_table():
@@ -26,13 +27,30 @@ def load_corpus(splits=("train", "val", "test")) -> dict:
     return out
 
 
-def karar_by_makam(train: list[dict]) -> dict:
-    """Karar (tonic) per makam = most frequent final sounded pitch in the training set."""
+def karar_by_makam(train: list[dict], extra: list[dict] = ()) -> dict:
+    """Karar (tonic) per makam = most frequent final sounded pitch in the training set.
+    For makams absent from training (the few-shot pool), the karar is estimated from the
+    `extra` pieces: at inference time the karar of the chosen makam is known from theory,
+    so this uses label knowledge only and no model training."""
+    def count(pieces):
+        c = collections.defaultdict(collections.Counter)
+        for x in pieces:
+            snd = [e["koma"] for e in x["events"] if e["koma"] != REST]
+            if snd: c[x["meta"]["makam"]][snd[-1]] += 1
+        return {m: v.most_common(1)[0][0] for m, v in c.items()}
+    k = count(extra); k.update(count(train))
+    return k
+
+
+def measure_lengths(train: list[dict]) -> dict:
+    """Usul -> most frequent notated measure length (fraction of a whole note) in training."""
     c = collections.defaultdict(collections.Counter)
     for x in train:
-        snd = [e["koma"] for e in x["events"] if e["koma"] != REST]
-        if snd: c[x["meta"]["makam"]][snd[-1]] += 1
-    return {m: v.most_common(1)[0][0] for m, v in c.items()}
+        ev = x["events"]
+        bars = [i for i, e in enumerate(ev) if is_bar_start(e["onset"])]
+        for s, e in zip(bars, bars[1:]):
+            c[x["meta"]["usul"]][sum(Fraction(q["num"], q["den"]) for q in ev[s:e])] += 1
+    return {u: v.most_common(1)[0][0] for u, v in c.items()}
 
 
 def ae_to_koma(train: list[dict]) -> dict:
@@ -44,12 +62,12 @@ def ae_to_koma(train: list[dict]) -> dict:
     return {a: v.most_common(1)[0][0] for a, v in c.items()}
 
 
-def tokenize_corpus(corpus: dict, mode: str, karar: dict, cond: bool):
+def tokenize_corpus(corpus: dict, mode: str, karar: dict, cond: bool, pos: bool = False):
     """Adds 'prefix' (token list) and 'groups' (list of per-note token lists) to every piece."""
     for pieces in corpus.values():
         for x in pieces:
             x["prefix"] = prefix_tokens(x["meta"]) if cond else []
-            x["groups"] = note_tokens(x["events"], mode, karar.get(x["meta"]["makam"]))
+            x["groups"] = note_tokens(x["events"], mode, karar.get(x["meta"]["makam"]), pos)
 
 
 def build_vocab(train: list[dict]) -> Vocab:

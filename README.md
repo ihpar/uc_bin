@@ -13,8 +13,9 @@ Preliminary work for a TÜBİTAK 3501 resubmission: makam-aware symbolic music m
 | `scripts/02_pdf_symbol_inventory.py` | symbol inventory and glyph atlas → `reports/pdf_symbol_report.md` |
 | `src/tokenizer.py`, `src/dataset.py`, `src/models.py` | event tokenization (4 pitch encodings), data pipeline, Transformer and LSTM language models |
 | `scripts/03_train_baseline.py` | trains one model, reports held-out bits per note → `runs/<name>/metrics.json` |
-| `scripts/04_evaluate_generation.py` | generation metrics for a run, with reference values from real music |
-| `scripts/run_baselines.sh` | full baseline grid (pitch-encoding, architecture and conditioning ablations) |
+| `src/generation.py` | batched sampling with optional usul-constrained decoding |
+| `scripts/04_evaluate_generation.py` | generation metrics for both usage scenarios, with reference values from real music |
+| `scripts/run_baselines.sh` | full experiment grid and regularisation sweep |
 | `scripts/05_summarize_runs.py` | collects all runs → `reports/baseline_results.md` |
 
 ## Usage
@@ -29,11 +30,23 @@ python scripts/02_pdf_symbol_inventory.py
 
 ```
 python scripts/03_train_baseline.py --smoke     # 20-second pipeline check, CPU is fine
-bash scripts/run_baselines.sh                   # 18 runs (6 configurations x 3 seeds)
 SEEDS="1" bash scripts/run_baselines.sh         # single-seed pass first
+bash scripts/run_baselines.sh                   # seeds 1 2 3
 ```
 
-Sequence layout: `BOS MAKAM:x USUL:y FORM:z ( [BAR] P:<pitch> D:<num>/<den> )* EOS`.
-Pitch encodings: `tet12` (12-TET, lossy), `aeu` (AEU note names), `koma53` (absolute 53-comma),
-`koma53_rel` (53-comma relative to the makam's karar). Only rows with `Kod = 9` (regular notes
-and rests) are used; ornament rows are ignored in the baseline.
+Sequence layout: `BOS MAKAM:x USUL:y FORM:z ( [BAR] [POS:k] P:<pitch> D:<num>/<den> )* EOS`.
+
+- Pitch encodings: `tet12` (12-TET, lossy), `aeu` (AEU note names), `koma53` (absolute 53-comma),
+  `koma53_rel` (53-comma relative to the makam's karar).
+- `--pos` adds POS tokens: duration elapsed in the current measure on an eighth-note grid.
+- Only rows with `Kod = 9` (regular notes and rests) are used; ornament rows are ignored.
+
+The grid in `run_baselines.sh` covers pitch encoding, architecture, conditioning, POS tokens and a
+regularisation sweep. Every main run is evaluated for the two usage scenarios of the editor, each
+with free and usul-constrained decoding (`src/generation.py`):
+
+1. **Autocomplete:** continue a test piece from its first 16 notes.
+2. **Composition from scratch:** only makam, usul and form are given; the model writes a whole piece.
+
+Likelihood is also reported on the `few_shot` pool, i.e. makams that never occur in training.
+Checkpoints (`runs/*/best.pt`) are git-ignored; do not commit them.

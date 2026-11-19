@@ -19,6 +19,7 @@ p = argparse.ArgumentParser()
 p.add_argument("--model", choices=["transformer", "lstm"], default="transformer")
 p.add_argument("--pitch", choices=PITCH_MODES, default="koma53_rel")
 p.add_argument("--cond", choices=["prefix", "none"], default="prefix", help="makam/usul/form prefix tokens")
+p.add_argument("--pos", action="store_true", help="add POS tokens (duration elapsed in the current measure)")
 p.add_argument("--ctx", type=int, default=512)
 p.add_argument("--d_model", type=int, default=256)
 p.add_argument("--layers", type=int, default=6)
@@ -36,22 +37,33 @@ p.add_argument("--patience", type=int, default=6, help="early stopping, in evalu
 p.add_argument("--seed", type=int, default=1)
 p.add_argument("--name", default=None)
 p.add_argument("--smoke", action="store_true")
+p.add_argument("--print_name", action="store_true", help="print the run name and exit")
 a = p.parse_args()
 if a.smoke:
     a.ctx, a.d_model, a.layers, a.lstm_hidden, a.batch = 128, 64, 2, 128, 16
     a.steps, a.eval_every, a.warmup = 60, 30, 10
 cfg = vars(a)
-name = a.name or f"{a.model}-{a.pitch}-{a.cond}-s{a.seed}" + ("-smoke" if a.smoke else "")
+def auto_name():
+    """Non-default hyperparameters are encoded in the run name so that sweeps do not collide."""
+    n = f"{a.model}-{a.pitch}-{a.cond}" + ("-pos" if a.pos else "")
+    if a.model == "transformer" and (a.layers, a.d_model) != (6, 256): n += f"-L{a.layers}d{a.d_model}"
+    if a.model == "lstm" and (a.lstm_layers, a.lstm_hidden) != (2, 512): n += f"-L{a.lstm_layers}h{a.lstm_hidden}"
+    if a.dropout != 0.1: n += f"-do{a.dropout}"
+    return n + f"-s{a.seed}" + ("-smoke" if a.smoke else "")
+name = a.name or auto_name()
+if a.print_name:
+    print(name); sys.exit(0)
+cfg.pop("print_name")
 out = os.path.join(ROOT, "runs", name); os.makedirs(out, exist_ok=True)
 torch.manual_seed(a.seed)
 dev = "cuda" if torch.cuda.is_available() else "cpu"
 
 # ---------- data
 corpus = D.load_corpus()
-karar = D.karar_by_makam(corpus["train"])
+karar = D.karar_by_makam(corpus["train"], corpus["few_shot"])
 if a.smoke:
     corpus = {k: v[::max(len(v) // 40, 1)] for k, v in corpus.items()}
-D.tokenize_corpus(corpus, a.pitch, karar, a.cond == "prefix")
+D.tokenize_corpus(corpus, a.pitch, karar, a.cond == "prefix", a.pos)
 vocab = D.build_vocab(corpus["train"])
 D.encode_corpus(corpus, vocab)
 n_tok = {k: sum(len(x["ids"]) for x in v) for k, v in corpus.items()}
@@ -76,7 +88,8 @@ def evaluate(pieces):
     per-token perplexity is not comparable across them; bits per note is, with the caveat
     that tet12 predicts a coarser pitch target."""
     model.eval()
-    nll = {"pitch": 0.0, "dur": 0.0, "bar": 0.0, "other": 0.0}; cnt = dict.fromkeys(nll, 0)
+    nll = {"pitch": 0.0, "dur": 0.0, "bar": 0.0, "pos": 0.0, "other": 0.0}; cnt = dict.fromkeys(nll, 0)
+    unk = [0]
     kind = [vocab.kind(i) for i in range(len(vocab))]
     buf = []
     def flush():
@@ -88,7 +101,8 @@ def evaluate(pieces):
         for i, (inp, tgt, mask) in enumerate(buf):
             lp = logits[i, torch.arange(len(tgt)), torch.tensor(tgt)]
             for j, (t, m) in enumerate(zip(tgt, mask)):
-                if m: nll[kind[t]] -= lp[j].item(); cnt[kind[t]] += 1
+                if m:
+                    nll[kind[t]] -= lp[j].item(); cnt[kind[t]] += 1; unk[0] += t == vocab.unk
         buf.clear()
     for x in pieces:
         for w in D.eval_windows(x, vocab, a.ctx):
@@ -100,7 +114,7 @@ def evaluate(pieces):
     return dict(nll_per_token=tot / ntok, ppl_per_token=math.exp(tot / ntok),
                 bits_per_note=tot / notes / ln2, pitch_bits_per_note=nll["pitch"] / notes / ln2,
                 dur_bits_per_note=nll["dur"] / notes / ln2, bar_bits_per_note=nll["bar"] / notes / ln2,
-                notes=notes, tokens=ntok)
+                pos_bits_per_note=nll["pos"] / notes / ln2, unk_rate=unk[0] / ntok, notes=notes, tokens=ntok)
 
 
 # ---------- training
@@ -134,9 +148,12 @@ for step in range(a.steps):
 model.load_state_dict(torch.load(os.path.join(out, "best.pt"), map_location=dev))
 res = dict(name=name, config=cfg, device=dev, n_params=n_params, vocab_size=len(vocab), tokens=n_tok,
            train_seconds=round(time.time() - t0), steps_run=hist[-1]["step"],
-           val=evaluate(corpus["val"]), test=evaluate(corpus["test"]), history=hist)
+           val=evaluate(corpus["val"]), test=evaluate(corpus["test"]),
+           few_shot=evaluate(corpus["few_shot"]),          # makams never seen in training
+           history=hist)
 json.dump(cfg, open(os.path.join(out, "config.json"), "w"), indent=1)
 json.dump(dict(itos=vocab.itos, karar=karar), open(os.path.join(out, "vocab.json"), "w"), ensure_ascii=False)
 json.dump(res, open(os.path.join(out, "metrics.json"), "w"), indent=1)
 print(json.dumps({k: res[k] for k in ("name", "n_params", "vocab_size", "steps_run", "train_seconds")}))
 print("test:", json.dumps(res["test"]))
+print("few_shot:", json.dumps(res["few_shot"]))

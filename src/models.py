@@ -53,23 +53,3 @@ def build_model(kind: str, vocab: int, cfg: dict) -> nn.Module:
     if kind == "lstm":
         return LSTMLM(vocab, cfg["ctx"], cfg["d_model"], cfg["lstm_layers"], cfg["lstm_hidden"], cfg["dropout"])
     raise ValueError(kind)
-
-
-@torch.no_grad()
-def generate(model, ids: list[int], max_new: int, eos: int, temperature=1.0, top_p=0.95, stop=None):
-    """Nucleus sampling. `stop(ids)` may end generation early (e.g. after N notes)."""
-    model.eval()
-    dev = next(model.parameters()).device
-    head_len = len(ids)
-    for _ in range(max_new):
-        x = torch.tensor([ids[-model.ctx:]], device=dev)
-        logits = model(x)[0, -1].float() / temperature
-        p = F.softmax(logits, -1)
-        sp, si = torch.sort(p, descending=True)
-        keep = torch.cumsum(sp, 0) - sp < top_p
-        sp = sp * keep
-        nxt = si[torch.multinomial(sp / sp.sum(), 1)].item()
-        if nxt == eos: break
-        ids = ids + [nxt]
-        if stop and stop(ids[head_len:]): break
-    return ids[head_len:]
