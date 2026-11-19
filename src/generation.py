@@ -38,7 +38,7 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
     dur_ids = [i for i in range(V) if kind[i] == "dur"]
     has_pos = any(k == "pos" for k in kind)
     pos_id = lambda r: vocab.stoi.get(pos_token(r))
-    group_start = ("bar", "pos") if has_pos else ("bar", "pitch")
+    group_start = ("bar", "pos") if has_pos else ("bar", "tie", "pitch")
     seqs = [list(h) for h in heads]; new = [[] for _ in range(n)]
     done = [False] * n; eos = [False] * n; notes = [0] * n
     run = [Fraction(r) if r is not None else Fraction(0) for r in (running or [0] * n)]

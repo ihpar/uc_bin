@@ -2,7 +2,7 @@
 from __future__ import annotations
 import collections, csv, os, random
 import torch
-from .symbtr import load_piece, REST
+from .symbtr import load_piece, split_at_bar_lines, REST
 from fractions import Fraction
 from .tokenizer import Vocab, note_tokens, prefix_tokens, is_bar_start, BOS, EOS
 
@@ -20,7 +20,7 @@ def load_corpus(splits=("train", "val", "test", "few_shot")) -> dict:
         if row["split"] not in splits:
             continue
         p = load_piece(row["fname"])
-        ev = p.events
+        ev = split_at_bar_lines(p.events)
         if len(ev) < 8:
             continue
         bars = [i for i, e in enumerate(ev) if is_bar_start(e["onset"])]

@@ -91,7 +91,7 @@ def evaluate(pieces):
     per-token perplexity is not comparable across them; bits per note is, with the caveat
     that tet12 predicts a coarser pitch target."""
     model.eval()
-    nll = {"pitch": 0.0, "dur": 0.0, "bar": 0.0, "pos": 0.0, "rem": 0.0, "other": 0.0}; cnt = dict.fromkeys(nll, 0)
+    nll = {"pitch": 0.0, "dur": 0.0, "bar": 0.0, "pos": 0.0, "rem": 0.0, "tie": 0.0, "other": 0.0}; cnt = dict.fromkeys(nll, 0)
     unk = [0]
     kind = [vocab.kind(i) for i in range(len(vocab))]
     buf = []

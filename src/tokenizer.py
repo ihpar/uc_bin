@@ -1,7 +1,10 @@
 """Event-based tokenization of SymbTr pieces with four pitch encodings.
 
 Sequence layout:
-  BOS [MAKAM:x USUL:y FORM:z [METER:n/d]]  ( [BAR [REM:k]] [POS:k] P:<pitch> D:<num>/<den> )*  EOS
+  BOS [MAKAM:x USUL:y FORM:z [METER:n/d]]  ( [BAR [REM:k]] [POS:k] [TIE] P:<pitch> D:<num>/<den> )*  EOS
+
+TIE marks the continuation of a note held across a bar line (the note is split there, as in
+a printed score).
 
 METER (optional) is the notated measure length of the piece. The same usul is written with
 different measure lengths in the collection (e.g. duyek as 4/4 or 8/4), so the usul name
@@ -29,7 +32,7 @@ from fractions import Fraction
 from .symbtr import REST
 
 PITCH_MODES = ("tet12", "aeu", "koma53", "koma53_rel")
-PAD, BOS, EOS, UNK, BAR = "<pad>", "<bos>", "<eos>", "<unk>", "BAR"
+PAD, BOS, EOS, UNK, BAR, TIE = "<pad>", "<bos>", "<eos>", "<unk>", "BAR", "TIE"
 SPECIALS = [PAD, BOS, EOS, UNK, BAR]
 _EPS = 1e-3
 
@@ -81,7 +84,7 @@ def pos_token(f: Fraction) -> str:
 
 def note_tokens(events: list[dict], mode: str, karar: int | None, pos: bool = False,
                 rem: bool = False) -> list[list[str]]:
-    """One token group per note: [BAR [REM]]? [POS]? P D."""
+    """One token group per note: [BAR [REM]]? [POS]? [TIE]? P D."""
     out, running = [], Fraction(0)
     left = sum(is_bar_start(ev["onset"]) for ev in events)      # measures not yet started
     for ev in events:
@@ -91,6 +94,7 @@ def note_tokens(events: list[dict], mode: str, karar: int | None, pos: bool = Fa
             if rem: g.append(rem_token(left))
         if pos:
             g.append(pos_token(running))
+        if ev.get("tie"): g.append(TIE)
         g += [pitch_token(ev, mode, karar), dur_token(ev)]
         running += Fraction(ev["num"], ev["den"])
         out.append(g)
@@ -111,7 +115,7 @@ class Vocab:
         t = self.itos[i]
         return ("pitch" if t.startswith("P:") else "dur" if t.startswith("D:") else
                 "pos" if t.startswith("POS:") else "rem" if t.startswith("REM:") else
-                "bar" if t == BAR else "other")
+                "bar" if t == BAR else "tie" if t == TIE else "other")
 
     def fraction(self, i: int):
         """Fraction value of a D: token, else None."""

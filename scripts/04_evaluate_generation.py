@@ -16,7 +16,7 @@ encodings, and each is also computed on the real test music as a reference value
   bar_validity    share of complete measures whose durations sum to the usul's usual measure length
   bar_validity_meter  the same against the measure length of the target piece itself
   copy_rate       share of 8-note (pitch, duration) n-grams that occur in the training set
-  grammar_ok      share of token groups that follow the [BAR] [POS] P D pattern
+  grammar_ok      share of token groups that follow the [BAR [REM]] [POS] [TIE] P D pattern
   --full only:
   ends_on_karar   share of pieces whose last sounded note is the karar of the makam
   eos_rate        share of pieces the model ended itself (before the token limit)
@@ -31,7 +31,7 @@ from src import dataset as D
 from src.models import build_model
 from src.generation import generate_batch
 from src.symbtr import REST
-from src.tokenizer import Vocab, decode_pitch, BAR
+from src.tokenizer import Vocab, decode_pitch, BAR, TIE
 
 p = argparse.ArgumentParser()
 p.add_argument("run"); p.add_argument("--prompt", type=int, default=16)
@@ -63,15 +63,25 @@ if not REF_ONLY:
     model = build_model(cfg["model"], len(vocab), cfg).to(dev)
     model.load_state_dict(torch.load(os.path.join(a.run, "best.pt"), map_location=dev)); model.eval()
 
+def merge_ties(notes):
+    """[(koma, duration, tie)] -> [(koma, duration)] with tied parts joined into one note,
+    so that pitch and n-gram statistics count a held note once."""
+    out = []
+    for koma, d, tie in notes:
+        if tie and out and out[-1][0] == koma: out[-1] = (koma, out[-1][1] + d)
+        else: out.append((koma, d))
+    return out
+
+
 # ---------- reference statistics from the training set
 N = 8
 pc_ref = collections.defaultdict(collections.Counter)      # makam -> pitch-class histogram
 ngrams = set()
 for x in corpus["train"]:
     k = karar[x["meta"]["makam"]]; ev = x["events"]
-    seq = [(e["koma"], Fraction(e["num"], e["den"])) for e in ev]
-    for e in ev:
-        if e["koma"] != REST: pc_ref[x["meta"]["makam"]][(e["koma"] - k) % 53] += 1
+    seq = merge_ties([(e["koma"], Fraction(e["num"], e["den"]), e["tie"]) for e in ev])
+    for koma, _ in seq:
+        if koma != REST: pc_ref[x["meta"]["makam"]][(koma - k) % 53] += 1
     for i in range(len(seq) - N + 1): ngrams.add(tuple(seq[i:i + N]))
 def norm(c):
     s = sum(c.values()) or 1; return {k: v / s for k, v in c.items()}
@@ -79,18 +89,20 @@ pc_ref = {m: norm(c) for m, c in pc_ref.items()}
 
 
 def parse_groups(tokens, makam):
-    """Token list -> list of (bar_flag, koma, Fraction) plus the number of malformed groups."""
+    """Token list -> list of (bar_flag, koma, Fraction, tie) plus the number of malformed groups."""
     notes, bad, i, k = [], 0, 0, karar.get(makam)
     while i < len(tokens):
         bar = tokens[i] == BAR
         j = i + 1 if bar else i
         if bar and j < len(tokens) and tokens[j].startswith("REM:"): j += 1
         if j < len(tokens) and tokens[j].startswith("POS:"): j += 1
+        tie = j < len(tokens) and tokens[j] == TIE
+        if tie: j += 1
         if j + 1 < len(tokens) and tokens[j].startswith("P:") and tokens[j + 1].startswith("D:"):
             koma = decode_pitch(tokens[j], cfg["pitch"], k, ae2k)
             num, den = tokens[j + 1][2:].split("/")
             if koma is None: bad += 1
-            else: notes.append((bar, koma, Fraction(int(num), int(den))))
+            else: notes.append((bar, koma, Fraction(int(num), int(den)), tie))
             i = j + 2
         else:
             bad += 1; i += 1
@@ -104,7 +116,8 @@ def stats():
 def update(st, notes, bad, x, ended=None):
     makam, usul = x["meta"]["makam"], x["meta"]["usul"]
     ref = pc_ref.get(makam, {}); k = karar.get(makam)
-    for _, koma, _ in notes:
+    joined = merge_ties([n[1:] for n in notes])
+    for koma, _ in joined:
         if koma == REST: continue
         pc = (koma - k) % 53; st["pc"][makam][pc] += 1
         st["off"][1] += 1; st["off"][0] += ref.get(pc, 0.0) < 0.005
@@ -114,13 +127,12 @@ def update(st, notes, bad, x, ended=None):
         tot = sum(n[2] for n in notes[s:e])
         st["bars"][1] += 1; st["bars"][0] += tot == measure_len.get(usul)
         st["barsm"][1] += 1; st["barsm"][0] += tot == x["meter"]
-    seq = [(n[1], n[2]) for n in notes]
-    for i in range(len(seq) - N + 1):
-        st["ng"][1] += 1; st["ng"][0] += tuple(seq[i:i + N]) in ngrams
+    for i in range(len(joined) - N + 1):
+        st["ng"][1] += 1; st["ng"][0] += tuple(joined[i:i + N]) in ngrams
     if a.full:
-        snd = [n[1] for n in notes if n[1] != REST]
+        snd = [n[0] for n in joined if n[0] != REST]
         st["karar"][1] += 1; st["karar"][0] += bool(snd) and snd[-1] == k
-        st["length"].append(len(notes))
+        st["length"].append(len(joined))
         if x["n_bars"]: st["ratio"].append(len(idx) / x["n_bars"])
         if ended is not None: st["eos"][1] += 1; st["eos"][0] += ended
 
@@ -159,10 +171,10 @@ if not REF_ONLY:
             heads.append([vocab.bos] + x["prefix_ids"] + x["ids"][:cut]); pin.append(1 + len(x["prefix_ids"]))
             notes, _ = parse_groups(sum(x["groups"][:a.prompt], []), x["meta"]["makam"])
             r = Fraction(0)                                  # duration elapsed in the prompt's last measure
-            for bar, _, d in notes: r = d if bar else r + d
+            for bar, _, d, _ in notes: r = d if bar else r + d
             run.append(r)
             L.append((x["meter"] if use_meter else measure_len.get(x["meta"]["usul"])) if a.constrain else None)
-            started = sum(1 for bar, _, _ in notes if bar)          # measures already started in the prompt
+            started = sum(1 for n in notes if n[0])          # measures already started in the prompt
             rem.append(x["n_bars"] - started - 1 if cfg.get("rem") else None)
         new, ended = generate_batch(model, heads, vocab, a.max_tokens if a.full else a.new_notes * 5,
                                     None if a.full else a.new_notes, a.temperature, a.top_p, L, run,

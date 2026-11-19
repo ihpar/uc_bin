@@ -74,6 +74,27 @@ class Piece:
         return [(e["koma"], e["num"], e["den"], 0, e["offset"]) for e in self.events]
 
 
+def split_at_bar_lines(events: list) -> list:
+    """Split every note or rest that is held across a bar line into tied parts, as a printed
+    score does. The txt files store such a note once, with an Offset beyond the bar line;
+    without splitting, the measure would have no start and its durations would not add up.
+    Continuation parts get tie=True."""
+    from fractions import Fraction
+    import math
+    out = []
+    for e in events:
+        a, b = e["onset"], e["offset"]
+        cuts = [m for m in range(math.floor(a) + 1, math.ceil(b)) if m - a > 0.01 and b - m > 0.01]
+        if not cuts:
+            out.append(dict(e, tie=False)); continue
+        total = Fraction(e["num"], e["den"]); edges = [a] + cuts + [b]
+        for i, (x, y) in enumerate(zip(edges, edges[1:])):
+            part = total * Fraction((y - x) / (b - a)).limit_denominator(64)
+            out.append(dict(e, onset=float(x), offset=float(y), num=part.numerator, den=part.denominator,
+                            tie=i > 0 and e["koma"] != REST))
+    return out
+
+
 def load_piece(fname: str, txt_dir: str = TXT_DIR) -> Piece:
     text = read_text(os.path.join(txt_dir, fname))
     rd = csv.DictReader(io.StringIO(text), delimiter="\t")
