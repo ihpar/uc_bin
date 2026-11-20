@@ -66,12 +66,12 @@ def ae_to_koma(train: list[dict]) -> dict:
 
 
 def tokenize_corpus(corpus: dict, mode: str, karar: dict, cond: bool, pos: bool = False,
-                    meter: bool = False, rem: bool = False):
+                    meter: bool = False, rem: bool = False, dur_first: bool = False):
     """Adds 'prefix' (token list) and 'groups' (list of per-note token lists) to every piece."""
     for pieces in corpus.values():
         for x in pieces:
             x["prefix"] = prefix_tokens(x["meta"], x["meter"] if meter else False) if cond else []
-            x["groups"] = note_tokens(x["events"], mode, karar.get(x["meta"]["makam"]), pos, rem)
+            x["groups"] = note_tokens(x["events"], mode, karar.get(x["meta"]["makam"]), pos, rem, dur_first)
 
 
 def build_vocab(train: list[dict]) -> Vocab:

@@ -28,6 +28,7 @@ def label(c):
     if c.get("pos"): extra.append("POS tokens")
     if c.get("meter"): extra.append("meter")
     if c.get("rem"): extra.append("countdown")
+    if c.get("order") == "dp": extra.append("duration first")
     if c["model"] == "transformer" and (c["layers"], c["d_model"]) != (6, 256): extra.append(f"{c['layers']}L d{c['d_model']}")
     if c["dropout"] != 0.1: extra.append(f"dropout {c['dropout']}")
     if c["ctx"] != 512: extra.append(f"context {c['ctx']}")

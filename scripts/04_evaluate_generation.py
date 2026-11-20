@@ -22,6 +22,10 @@ encodings, and each is also computed on the real test music as a reference value
   eos_rate        share of pieces the model ended itself (before the token limit)
   mean_notes      mean piece length in notes
   length_ratio    generated measures / measures of the target piece (mean over pieces)
+  ending diagnostics: ends_on_karar_any_octave, karar_in_last_measure, final_note_dur (mean,
+  whole notes), final_pitch_top (most frequent final pitches in commas above the karar)
+  --save_samples writes <scenario>_samples.jsonl: the last three measures of every piece
+  (generated and real) and the first 20 generated pieces in full.
 """
 import argparse, collections, json, os, sys
 from fractions import Fraction
@@ -41,6 +45,7 @@ p.add_argument("--max_tokens", type=int, default=3000, help="token limit for --f
 p.add_argument("--constrain", action="store_true", help="usul-constrained decoding")
 p.add_argument("--temperature", type=float, default=1.0); p.add_argument("--top_p", type=float, default=0.95)
 p.add_argument("--batch", type=int, default=64); p.add_argument("--seed", type=int, default=1)
+p.add_argument("--save_samples", action="store_true")
 a = p.parse_args()
 REF_ONLY = a.run == "reference"
 if REF_ONLY:
@@ -48,6 +53,7 @@ if REF_ONLY:
 else:
     cfg = json.load(open(os.path.join(a.run, "config.json")))
     vj = json.load(open(os.path.join(a.run, "vocab.json")))
+DUR_FIRST = cfg.get("order") == "dp"
 dev = "cuda" if torch.cuda.is_available() else "cpu"
 torch.manual_seed(a.seed)
 
@@ -56,7 +62,7 @@ karar = D.karar_by_makam(corpus["train"]); ae2k = D.ae_to_koma(corpus["train"])
 measure_len = D.measure_lengths(corpus["train"])
 if cfg.get("smoke"): corpus = {k: v[::max(len(v) // 40, 1)] for k, v in corpus.items()}
 D.tokenize_corpus(corpus, cfg["pitch"], karar, cfg["cond"] == "prefix", cfg.get("pos", False),
-                  cfg.get("meter", False), cfg.get("rem", False))
+                  cfg.get("meter", False), cfg.get("rem", False), cfg.get("order") == "dp")
 vocab = D.build_vocab(corpus["train"]) if REF_ONLY else Vocab(vj["itos"])
 D.encode_corpus(corpus, vocab)
 if not REF_ONLY:
@@ -98,9 +104,11 @@ def parse_groups(tokens, makam):
         if j < len(tokens) and tokens[j].startswith("POS:"): j += 1
         tie = j < len(tokens) and tokens[j] == TIE
         if tie: j += 1
-        if j + 1 < len(tokens) and tokens[j].startswith("P:") and tokens[j + 1].startswith("D:"):
-            koma = decode_pitch(tokens[j], cfg["pitch"], k, ae2k)
-            num, den = tokens[j + 1][2:].split("/")
+        a1, a2 = ("D:", "P:") if DUR_FIRST else ("P:", "D:")
+        if j + 1 < len(tokens) and tokens[j].startswith(a1) and tokens[j + 1].startswith(a2):
+            pt, dt = (tokens[j + 1], tokens[j]) if DUR_FIRST else (tokens[j], tokens[j + 1])
+            koma = decode_pitch(pt, cfg["pitch"], k, ae2k)
+            num, den = dt[2:].split("/")
             if koma is None: bad += 1
             else: notes.append((bar, koma, Fraction(int(num), int(den)), tie))
             i = j + 2
@@ -111,7 +119,8 @@ def parse_groups(tokens, makam):
 
 def stats():
     return dict(pc=collections.defaultdict(collections.Counter), bars=[0, 0], barsm=[0, 0], ng=[0, 0], grp=[0, 0],
-                off=[0, 0], karar=[0, 0], eos=[0, 0], length=[], ratio=[])
+                off=[0, 0], karar=[0, 0], eos=[0, 0], length=[], ratio=[],
+                karar8=[0, 0], klast=[0, 0], fdur=[], fpitch=collections.Counter(), tails=[])
 
 def update(st, notes, bad, x, ended=None):
     makam, usul = x["meta"]["makam"], x["meta"]["usul"]
@@ -133,6 +142,17 @@ def update(st, notes, bad, x, ended=None):
         snd = [n[0] for n in joined if n[0] != REST]
         st["karar"][1] += 1; st["karar"][0] += bool(snd) and snd[-1] == k
         st["length"].append(len(joined))
+        # ending diagnostics
+        last_bar = idx[-1] if idx else 0
+        tail = [n for n in notes[last_bar:]]
+        st["karar8"][1] += 1; st["karar8"][0] += bool(snd) and (snd[-1] - k) % 53 == 0
+        st["klast"][1] += 1; st["klast"][0] += any(n[1] == k for n in tail)
+        if snd:
+            st["fpitch"][snd[-1] - k] += 1
+            st["fdur"].append(float([n for n in joined if n[0] != REST][-1][1]))
+        start = idx[-3] if len(idx) >= 3 else 0             # last three measures, relative to the karar
+        st["tails"].append([["BAR" if n[0] else "", (n[1] - k) if n[1] != REST else "R", str(n[2]), int(n[3])]
+                            for n in notes[start:]])
         if x["n_bars"]: st["ratio"].append(len(idx) / x["n_bars"])
         if ended is not None: st["eos"][1] += 1; st["eos"][0] += ended
 
@@ -148,12 +168,16 @@ def finish(st):
     if a.full:
         out.update(ends_on_karar=r(st["karar"]), eos_rate=r(st["eos"]),
                    mean_notes=sum(st["length"]) / len(st["length"]) if st["length"] else None,
-                   length_ratio=sum(st["ratio"]) / len(st["ratio"]) if st["ratio"] else None)
+                   length_ratio=sum(st["ratio"]) / len(st["ratio"]) if st["ratio"] else None,
+                   ends_on_karar_any_octave=r(st["karar8"]), karar_in_last_measure=r(st["klast"]),
+                   final_note_dur=sum(st["fdur"]) / len(st["fdur"]) if st["fdur"] else None,
+                   final_pitch_top=[[p_, c] for p_, c in st["fpitch"].most_common(8)])
     return out
 
 
 print(f"[{os.path.basename(a.run.rstrip('/'))}] prompt={a.prompt} full={a.full} constrain={a.constrain} device={dev}", flush=True)
 gen, real = stats(), stats()
+full_samples = []
 need = a.prompt + (8 if a.full else a.new_notes)
 pieces = [x for x in corpus["test"] if len(x["groups"]) >= need]
 if a.max_pieces: pieces = pieces[:a.max_pieces]
@@ -178,9 +202,12 @@ if not REF_ONLY:
             rem.append(x["n_bars"] - started - 1 if cfg.get("rem") else None)
         new, ended = generate_batch(model, heads, vocab, a.max_tokens if a.full else a.new_notes * 5,
                                     None if a.full else a.new_notes, a.temperature, a.top_p, L, run,
-                                    progress=250 if a.full else 0, pinned=pin, remaining=rem)
+                                    progress=250 if a.full else 0, pinned=pin, remaining=rem, dur_first=DUR_FIRST)
         for x, ids, e in zip(chunk, new, ended):
-            update(gen, *parse_groups(vocab.decode(ids), x["meta"]["makam"]), x, e)
+            toks = vocab.decode(ids)
+            update(gen, *parse_groups(toks, x["meta"]["makam"]), x, e)
+            if len(full_samples) < 20:
+                full_samples.append(dict(fname=x["fname"], prefix=x["prefix"], ended=bool(e), tokens=" ".join(toks)))
         print(f"{min(b + a.batch, len(pieces))}/{len(pieces)}", flush=True)
 
 tag = f"gen_prompt{a.prompt}" + ("_full" if a.full else "") + ("_constrained" if a.constrain else "")
@@ -190,4 +217,11 @@ res = dict(run=os.path.basename(a.run.rstrip("/")), scenario=tag, pieces=len(pie
            generated=None if REF_ONLY else finish(gen), reference=finish(real))
 if not REF_ONLY:
     json.dump(res, open(os.path.join(a.run, tag + ".json"), "w"), indent=1)
+    if a.save_samples and a.full:
+        with open(os.path.join(a.run, tag + "_samples.jsonl"), "w", encoding="utf-8") as fh:
+            for x, g, t in zip(pieces, gen["tails"], real["tails"]):
+                fh.write(json.dumps(dict(fname=x["fname"], makam=x["meta"]["makam"], usul=x["meta"]["usul"],
+                                         meter=str(x["meter"]), generated_tail=g, real_tail=t), ensure_ascii=False) + "\n")
+            for smp in full_samples:
+                fh.write(json.dumps(dict(full=smp), ensure_ascii=False) + "\n")
 print(json.dumps(res, indent=1))

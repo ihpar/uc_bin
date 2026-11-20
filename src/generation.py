@@ -4,7 +4,8 @@ Constraint (hard, applied at decoding time; works with any encoding):
   * a duration longer than what is left in the current measure is masked out,
   * BAR is forbidden inside a measure; when the measure is full the model may only start
     the next measure (BAR) or end the piece (EOS), so pieces end on a complete measure,
-  * a POS token, if the encoding uses them, is forced to the true running position.
+  * a POS token, if the encoding uses them, is forced to the true running position,
+  * a pitch is always followed by a duration (or the reverse in duration-first order).
 The measure length is the piece's meter if the model is conditioned on it, else the most
 frequent measure length of the usul in training.
 
@@ -15,14 +16,15 @@ the last measure has been written a further BAR is turned into the end of the pi
 from __future__ import annotations
 from fractions import Fraction
 import torch, torch.nn.functional as F
-from .tokenizer import pos_token, rem_token
+from .tokenizer import pos_token, rem_token, TIE
 
 
 @torch.no_grad()
 def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_notes: int | None = None,
                    temperature: float = 1.0, top_p: float = 0.95,
                    measure_len: list | None = None, running: list | None = None,
-                   progress: int = 0, pinned: list | None = None, remaining: list | None = None):
+                   progress: int = 0, pinned: list | None = None, remaining: list | None = None,
+                   dur_first: bool = False):
     """heads: prompt token ids per sequence. measure_len[i] is a Fraction (or None for no
     constraint); running[i] is the duration already elapsed in the current measure of the prompt.
     pinned[i] is the number of leading tokens (BOS + conditioning prefix) that must stay
@@ -36,9 +38,13 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
     kind = [vocab.kind(i) for i in range(V)]
     frac = [vocab.fraction(i) for i in range(V)]
     dur_ids = [i for i in range(V) if kind[i] == "dur"]
+    pitch_ids = [i for i in range(V) if kind[i] == "pitch"]
+    first_ids = dur_ids if dur_first else pitch_ids                 # first token of the P/D pair
+    note_start = first_ids + ([vocab.stoi[TIE]] if TIE in vocab.stoi else [])
     has_pos = any(k == "pos" for k in kind)
     pos_id = lambda r: vocab.stoi.get(pos_token(r))
-    group_start = ("bar", "pos") if has_pos else ("bar", "tie", "pitch")
+    end_kind = "pitch" if dur_first else "dur"         # the token that closes a note group
+    group_start = ("bar", "pos") if has_pos else ("bar", "tie", "dur" if dur_first else "pitch")
     seqs = [list(h) for h in heads]; new = [[] for _ in range(n)]
     done = [False] * n; eos = [False] * n; notes = [0] * n
     run = [Fraction(r) if r is not None else Fraction(0) for r in (running or [0] * n)]
@@ -49,7 +55,7 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
     def only(row, ids):
         m = torch.full((V,), float("-inf")); m[ids] = 0.0; logits[row] = logits[row] + m
     # what the previous token was: decides which constraint applies next
-    last = [kind[h[-1]] if h and kind[h[-1]] in ("pitch", "dur", "pos", "bar", "rem") else "start" for h in heads]
+    last = [kind[h[-1]] if h and kind[h[-1]] in ("pitch", "dur", "pos", "bar", "rem", "tie") else "start" for h in heads]
 
     for step in range(max_new):
         act = [i for i in range(n) if not done[i]]
@@ -75,14 +81,18 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
             if last[i] == "bar":                            # REM token is determined by the countdown
                 rid = vocab.stoi.get(rem_token(nxt[i] + 1))  # nxt was already decremented at the BAR
                 if rid is not None: only(r, [rid])
-            elif last[i] in ("dur", "start") and nxt[i] < 0:   # last measure written: a BAR means the end
+            elif last[i] in (end_kind, "start") and nxt[i] < 0:   # last measure written: a BAR means the end
                 logits[r, vocab.eos] = torch.maximum(logits[r, vocab.eos], logits[r, vocab.bar])
                 logits[r, vocab.bar] = float("-inf")
-            elif last[i] in ("dur", "start"):
+            elif last[i] in (end_kind, "start"):
                 logits[r, vocab.eos] = float("-inf")        # measures are still owed: no early ending
         for r, i in enumerate(act):
             if L[i] is None: continue
-            if last[i] in ("dur", "start"):                 # group boundary
+            if run[i] < L[i]:                               # a duration must fit the rest of the measure
+                left = L[i] - run[i]
+                too_long = [d for d in dur_ids if frac[d] > left]
+                if len(too_long) < len(dur_ids): logits[r, too_long] = float("-inf")
+            if last[i] in (end_kind, "start"):              # group boundary
                 allowed = None
                 if last[i] == "start" and run[i] == 0:
                     allowed = [vocab.bar]                   # a piece starts with a bar line
@@ -90,17 +100,18 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
                     allowed = [vocab.bar, vocab.eos] if nxt[i] is None else [vocab.eos] if nxt[i] < 0 else [vocab.bar]
                 else:                                       # inside a measure: no bar line, no ending
                     logits[r, vocab.bar] = float("-inf"); logits[r, vocab.eos] = float("-inf")
-                    if has_pos and pos_id(run[i]) is not None: allowed = [pos_id(run[i])]
+                    allowed = [pos_id(run[i])] if has_pos and pos_id(run[i]) is not None else note_start
                 if allowed is not None:
                     m = torch.full((V,), float("-inf")); m[allowed] = 0.0; logits[r] = logits[r] + m
+            elif last[i] == ("dur" if dur_first else "pitch"):      # second half of the pair must follow
+                only(r, pitch_ids if dur_first else dur_ids)
+            elif last[i] == "tie":
+                only(r, first_ids)
+            elif last[i] == "pos" or (not has_pos and (last[i] == "rem" or last[i] == "bar" and nxt[i] is None)):
+                only(r, note_start)
             elif last[i] in ("bar", "rem") and has_pos and pos_id(Fraction(0)) is not None \
                     and not (last[i] == "bar" and nxt[i] is not None):
                 m = torch.full((V,), float("-inf")); m[pos_id(Fraction(0))] = 0.0; logits[r] = m
-            elif last[i] == "pitch":                        # duration must fit the measure
-                left = L[i] - run[i]
-                ok = [d for d in dur_ids if frac[d] <= left]
-                if ok:
-                    m = torch.full((V,), float("-inf")); m[ok] = 0.0; logits[r] = logits[r] + m
         p = F.softmax(logits, -1)
         sp, si = torch.sort(p, descending=True)
         keep = torch.cumsum(sp, -1) - sp < top_p
@@ -116,7 +127,9 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
                 run[i] = Fraction(0)
                 if nxt[i] is not None: nxt[i] -= 1
             elif k == "dur":
-                run[i] += frac[t]; notes[i] += 1
+                run[i] += frac[t]
+            if k == end_kind:
+                notes[i] += 1
                 if stop_notes and notes[i] >= stop_notes: done[i] = True
-            if k in ("pitch", "dur", "pos", "bar", "rem"): last[i] = k
+            if k in ("pitch", "dur", "pos", "bar", "rem", "tie"): last[i] = k
     return new, eos

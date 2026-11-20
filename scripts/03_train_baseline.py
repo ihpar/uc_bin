@@ -22,6 +22,7 @@ p.add_argument("--cond", choices=["prefix", "none"], default="prefix", help="mak
 p.add_argument("--pos", action="store_true", help="add POS tokens (duration elapsed in the current measure)")
 p.add_argument("--meter", action="store_true", help="add a METER token (notated measure length) to the prefix")
 p.add_argument("--rem", action="store_true", help="add REM tokens (measures remaining) after every BAR")
+p.add_argument("--order", choices=["pd", "dp"], default="pd", help="pitch then duration, or duration first")
 p.add_argument("--ctx", type=int, default=512)
 p.add_argument("--d_model", type=int, default=256)
 p.add_argument("--layers", type=int, default=6)
@@ -47,7 +48,7 @@ if a.smoke:
 cfg = vars(a)
 def auto_name():
     """Non-default hyperparameters are encoded in the run name so that sweeps do not collide."""
-    n = f"{a.model}-{a.pitch}-{a.cond}" + ("-pos" if a.pos else "") + ("-meter" if a.meter else "") + ("-rem" if a.rem else "")
+    n = f"{a.model}-{a.pitch}-{a.cond}" + ("-pos" if a.pos else "") + ("-meter" if a.meter else "") + ("-rem" if a.rem else "") + ("-dp" if a.order == "dp" else "")
     if a.model == "transformer" and (a.layers, a.d_model) != (6, 256): n += f"-L{a.layers}d{a.d_model}"
     if a.model == "lstm" and (a.lstm_layers, a.lstm_hidden) != (2, 512): n += f"-L{a.lstm_layers}h{a.lstm_hidden}"
     if a.dropout != 0.1: n += f"-do{a.dropout}"
@@ -66,7 +67,7 @@ corpus = D.load_corpus()
 karar = D.karar_by_makam(corpus["train"], corpus["few_shot"])
 if a.smoke:
     corpus = {k: v[::max(len(v) // 40, 1)] for k, v in corpus.items()}
-D.tokenize_corpus(corpus, a.pitch, karar, a.cond == "prefix", a.pos, a.meter, a.rem)
+D.tokenize_corpus(corpus, a.pitch, karar, a.cond == "prefix", a.pos, a.meter, a.rem, a.order == "dp")
 vocab = D.build_vocab(corpus["train"])
 D.encode_corpus(corpus, vocab)
 n_tok = {k: sum(len(x["ids"]) for x in v) for k, v in corpus.items()}

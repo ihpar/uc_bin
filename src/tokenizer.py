@@ -6,6 +6,9 @@ Sequence layout:
 TIE marks the continuation of a note held across a bar line (the note is split there, as in
 a printed score).
 
+`dur_first=True` writes D before P. The model then knows, when it chooses a pitch, how long
+the note is and therefore whether it is the note that completes the measure or the piece.
+
 METER (optional) is the notated measure length of the piece. The same usul is written with
 different measure lengths in the collection (e.g. duyek as 4/4 or 8/4), so the usul name
 alone does not fix it.
@@ -83,8 +86,8 @@ def pos_token(f: Fraction) -> str:
 
 
 def note_tokens(events: list[dict], mode: str, karar: int | None, pos: bool = False,
-                rem: bool = False) -> list[list[str]]:
-    """One token group per note: [BAR [REM]]? [POS]? [TIE]? P D."""
+                rem: bool = False, dur_first: bool = False) -> list[list[str]]:
+    """One token group per note: [BAR [REM]]? [POS]? [TIE]? P D   (D P if dur_first)."""
     out, running = [], Fraction(0)
     left = sum(is_bar_start(ev["onset"]) for ev in events)      # measures not yet started
     for ev in events:
@@ -95,7 +98,8 @@ def note_tokens(events: list[dict], mode: str, karar: int | None, pos: bool = Fa
         if pos:
             g.append(pos_token(running))
         if ev.get("tie"): g.append(TIE)
-        g += [pitch_token(ev, mode, karar), dur_token(ev)]
+        pd = [pitch_token(ev, mode, karar), dur_token(ev)]
+        g += pd[::-1] if dur_first else pd
         running += Fraction(ev["num"], ev["den"])
         out.append(g)
     return out
