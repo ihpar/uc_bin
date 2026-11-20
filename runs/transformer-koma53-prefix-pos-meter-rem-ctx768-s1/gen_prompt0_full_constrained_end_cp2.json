@@ -1,0 +1,132 @@
+{
+ "run": "transformer-koma53-prefix-pos-meter-rem-ctx768-s1",
+ "scenario": "gen_prompt0_full_constrained_end_cp2",
+ "pieces": 241,
+ "prompt_notes": 0,
+ "new_notes": null,
+ "full": true,
+ "constrained": true,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "copy_penalty": 2.0,
+ "generated": {
+  "scale_overlap": 0.8842016242995429,
+  "off_scale_rate": 0.005358224780369585,
+  "bar_validity": 0.9280429421151893,
+  "bar_validity_meter": 0.9999274626432613,
+  "copy_rate": 0.04613220555437307,
+  "grammar_ok": 0.999937257995124,
+  "notes": 105632,
+  "measures": 13786,
+  "ends_on_karar": 0.24066390041493776,
+  "eos_rate": 0.966804979253112,
+  "mean_notes": 455.37759336099583,
+  "length_ratio": 0.9919975699626433,
+  "ends_on_karar_any_octave": 0.3153526970954357,
+  "karar_in_last_measure": 0.3153526970954357,
+  "final_note_dur": 0.22816390041493775,
+  "final_pitch_top": [
+   [
+    0,
+    58
+   ],
+   [
+    22,
+    33
+   ],
+   [
+    31,
+    32
+   ],
+   [
+    53,
+    18
+   ],
+   [
+    13,
+    11
+   ],
+   [
+    35,
+    11
+   ],
+   [
+    44,
+    7
+   ],
+   [
+    9,
+    6
+   ]
+  ],
+  "repeated_measures": 0.06496551466401419,
+  "pitch_by_tenth": [
+   24.9,
+   24.0,
+   25.1,
+   25.3,
+   25.5,
+   25.5,
+   25.5,
+   25.9,
+   24.8,
+   24.5
+  ]
+ },
+ "reference": {
+  "scale_overlap": 0.9221633433402594,
+  "off_scale_rate": 0.022355319879449127,
+  "bar_validity": 0.9146532120523024,
+  "bar_validity_meter": 0.9723564525298465,
+  "copy_rate": 0.05953541939498639,
+  "grammar_ok": 1.0,
+  "notes": 104852,
+  "measures": 14072,
+  "ends_on_karar": 0.966804979253112,
+  "eos_rate": null,
+  "mean_notes": 453.75103734439836,
+  "length_ratio": 1.0,
+  "ends_on_karar_any_octave": 0.979253112033195,
+  "karar_in_last_measure": 0.7676348547717843,
+  "final_note_dur": 0.4299792531120332,
+  "final_pitch_top": [
+   [
+    0,
+    233
+   ],
+   [
+    53,
+    3
+   ],
+   [
+    31,
+    2
+   ],
+   [
+    1,
+    1
+   ],
+   [
+    38,
+    1
+   ],
+   [
+    13,
+    1
+   ]
+  ],
+  "repeated_measures": 0.03234810416436696,
+  "pitch_by_tenth": [
+   27.7,
+   25.2,
+   26.6,
+   27.1,
+   26.0,
+   28.1,
+   29.4,
+   31.2,
+   26.9,
+   19.1
+  ]
+ }
+}
