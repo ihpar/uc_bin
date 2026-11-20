@@ -1,0 +1,31 @@
+{
+ "run": "lstm-koma53-prefix-do0.5-s1",
+ "scenario": "gen_prompt16_constrained",
+ "pieces": 239,
+ "prompt_notes": 16,
+ "new_notes": 64,
+ "full": false,
+ "constrained": true,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "generated": {
+  "scale_overlap": 0.8693453080403539,
+  "off_scale_rate": 0.005028933590520804,
+  "bar_validity": 0.9910661107802263,
+  "bar_validity_meter": 0.9517569982132221,
+  "copy_rate": 0.05498692566305566,
+  "grammar_ok": 1.0,
+  "notes": 14516,
+  "measures": 1679
+ },
+ "reference": {
+  "scale_overlap": 0.9075932458875935,
+  "off_scale_rate": 0.014474686612646306,
+  "bar_validity": 0.9463869463869464,
+  "bar_validity_meter": 0.9947552447552448,
+  "copy_rate": 0.091017251635931,
+  "grammar_ok": 1.0,
+  "notes": 14439,
+  "measures": 1716
+ }
+}

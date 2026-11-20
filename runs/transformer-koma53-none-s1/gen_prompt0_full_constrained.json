@@ -1,0 +1,39 @@
+{
+ "run": "transformer-koma53-none-s1",
+ "scenario": "gen_prompt0_full_constrained",
+ "pieces": 241,
+ "prompt_notes": 0,
+ "new_notes": null,
+ "full": true,
+ "constrained": true,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "generated": {
+  "scale_overlap": 0.6134946705626767,
+  "off_scale_rate": 0.19704403309241,
+  "bar_validity": 0.9844218551461246,
+  "bar_validity_meter": 0.9441423125794155,
+  "copy_rate": 0.045006325555243185,
+  "grammar_ok": 0.9995994220721862,
+  "notes": 277405,
+  "measures": 39350,
+  "ends_on_karar": 0.1078838174273859,
+  "eos_rate": 0.1908713692946058,
+  "mean_notes": 1187.746887966805,
+  "length_ratio": 4.061699608232286
+ },
+ "reference": {
+  "scale_overlap": 0.9221633433402594,
+  "off_scale_rate": 0.022355319879449127,
+  "bar_validity": 0.9146532120523024,
+  "bar_validity_meter": 0.9723564525298465,
+  "copy_rate": 0.05953541939498639,
+  "grammar_ok": 1.0,
+  "notes": 104852,
+  "measures": 14072,
+  "ends_on_karar": 0.966804979253112,
+  "eos_rate": null,
+  "mean_notes": 453.75103734439836,
+  "length_ratio": 1.0
+ }
+}

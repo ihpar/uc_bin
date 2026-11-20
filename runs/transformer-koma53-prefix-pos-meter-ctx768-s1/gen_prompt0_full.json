@@ -1,0 +1,39 @@
+{
+ "run": "transformer-koma53-prefix-pos-meter-ctx768-s1",
+ "scenario": "gen_prompt0_full",
+ "pieces": 241,
+ "prompt_notes": 0,
+ "new_notes": null,
+ "full": true,
+ "constrained": false,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "generated": {
+  "scale_overlap": 0.8453772060026924,
+  "off_scale_rate": 0.005336017273177095,
+  "bar_validity": 0.9453423336547734,
+  "bar_validity_meter": 0.9841851494696239,
+  "copy_rate": 0.03585049997267909,
+  "grammar_ok": 0.9990501679261126,
+  "notes": 177848,
+  "measures": 25925,
+  "ends_on_karar": 0.26141078838174275,
+  "eos_rate": 0.24896265560165975,
+  "mean_notes": 766.3775933609959,
+  "length_ratio": 2.349415307569777
+ },
+ "reference": {
+  "scale_overlap": 0.9221633433402594,
+  "off_scale_rate": 0.022355319879449127,
+  "bar_validity": 0.9146532120523024,
+  "bar_validity_meter": 0.9723564525298465,
+  "copy_rate": 0.05953541939498639,
+  "grammar_ok": 1.0,
+  "notes": 104852,
+  "measures": 14072,
+  "ends_on_karar": 0.966804979253112,
+  "eos_rate": null,
+  "mean_notes": 453.75103734439836,
+  "length_ratio": 1.0
+ }
+}

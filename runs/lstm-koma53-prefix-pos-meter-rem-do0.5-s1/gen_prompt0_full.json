@@ -1,0 +1,39 @@
+{
+ "run": "lstm-koma53-prefix-pos-meter-rem-do0.5-s1",
+ "scenario": "gen_prompt0_full",
+ "pieces": 241,
+ "prompt_notes": 0,
+ "new_notes": null,
+ "full": true,
+ "constrained": false,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "generated": {
+  "scale_overlap": 0.8972092258750214,
+  "off_scale_rate": 0.013447802063945273,
+  "bar_validity": 0.9206949189503526,
+  "bar_validity_meter": 0.9542051319328342,
+  "copy_rate": 0.054458913508689435,
+  "grammar_ok": 0.9998167860610835,
+  "notes": 102619,
+  "measures": 13757,
+  "ends_on_karar": 0.49377593360995853,
+  "eos_rate": 0.950207468879668,
+  "mean_notes": 439.3941908713693,
+  "length_ratio": 0.9909570270589901
+ },
+ "reference": {
+  "scale_overlap": 0.9221633433402594,
+  "off_scale_rate": 0.022355319879449127,
+  "bar_validity": 0.9146532120523024,
+  "bar_validity_meter": 0.9723564525298465,
+  "copy_rate": 0.05953541939498639,
+  "grammar_ok": 1.0,
+  "notes": 104852,
+  "measures": 14072,
+  "ends_on_karar": 0.966804979253112,
+  "eos_rate": null,
+  "mean_notes": 453.75103734439836,
+  "length_ratio": 1.0
+ }
+}
