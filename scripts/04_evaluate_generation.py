@@ -22,6 +22,8 @@ encodings, and each is also computed on the real test music as a reference value
   eos_rate        share of pieces the model ended itself (before the token limit)
   mean_notes      mean piece length in notes
   length_ratio    generated measures / measures of the target piece (mean over pieces)
+  repeated_measures  share of measures identical to one of the two measures before it
+  pitch_by_tenth  mean pitch in commas above the karar for each tenth of the piece (the seyir)
   ending diagnostics: ends_on_karar_any_octave, karar_in_last_measure, final_note_dur (mean,
   whole notes), final_pitch_top (most frequent final pitches in commas above the karar)
   --save_samples writes <scenario>_samples.jsonl: the last three measures of every piece
@@ -46,6 +48,8 @@ p.add_argument("--constrain", action="store_true", help="usul-constrained decodi
 p.add_argument("--temperature", type=float, default=1.0); p.add_argument("--top_p", type=float, default=0.95)
 p.add_argument("--batch", type=int, default=64); p.add_argument("--seed", type=int, default=1)
 p.add_argument("--save_samples", action="store_true")
+p.add_argument("--copy_penalty", type=float, default=0.0, help="logit penalty on literally repeating a recent measure")
+p.add_argument("--suffix", default="", help="appended to the output file name")
 a = p.parse_args()
 REF_ONLY = a.run == "reference"
 if REF_ONLY:
@@ -120,7 +124,8 @@ def parse_groups(tokens, makam):
 def stats():
     return dict(pc=collections.defaultdict(collections.Counter), bars=[0, 0], barsm=[0, 0], ng=[0, 0], grp=[0, 0],
                 off=[0, 0], karar=[0, 0], eos=[0, 0], length=[], ratio=[],
-                karar8=[0, 0], klast=[0, 0], fdur=[], fpitch=collections.Counter(), tails=[])
+                karar8=[0, 0], klast=[0, 0], fdur=[], fpitch=collections.Counter(), tails=[],
+                rep=[], tenth=[[] for _ in range(10)])
 
 def update(st, notes, bad, x, ended=None):
     makam, usul = x["meta"]["makam"], x["meta"]["usul"]
@@ -142,6 +147,13 @@ def update(st, notes, bad, x, ended=None):
         snd = [n[0] for n in joined if n[0] != REST]
         st["karar"][1] += 1; st["karar"][0] += bool(snd) and snd[-1] == k
         st["length"].append(len(joined))
+        meas = [tuple((n[1], n[2]) for n in notes[s_:e_]) for s_, e_ in zip(idx, idx[1:] + [len(notes)])]
+        if len(meas) > 2:
+            st["rep"].append(sum(meas[i] in (meas[i - 1], meas[i - 2]) for i in range(2, len(meas))) / (len(meas) - 2))
+        rel = [n[0] - k for n in joined if n[0] != REST]
+        for d in range(10):
+            seg = rel[len(rel) * d // 10:len(rel) * (d + 1) // 10]
+            if seg: st["tenth"][d].append(sum(seg) / len(seg))
         # ending diagnostics
         last_bar = idx[-1] if idx else 0
         tail = [n for n in notes[last_bar:]]
@@ -171,7 +183,9 @@ def finish(st):
                    length_ratio=sum(st["ratio"]) / len(st["ratio"]) if st["ratio"] else None,
                    ends_on_karar_any_octave=r(st["karar8"]), karar_in_last_measure=r(st["klast"]),
                    final_note_dur=sum(st["fdur"]) / len(st["fdur"]) if st["fdur"] else None,
-                   final_pitch_top=[[p_, c] for p_, c in st["fpitch"].most_common(8)])
+                   final_pitch_top=[[p_, c] for p_, c in st["fpitch"].most_common(8)],
+                   repeated_measures=sum(st["rep"]) / len(st["rep"]) if st["rep"] else None,
+                   pitch_by_tenth=[round(sum(v) / len(v), 1) if v else None for v in st["tenth"]])
     return out
 
 
@@ -202,7 +216,7 @@ if not REF_ONLY:
             rem.append(x["n_bars"] - started - 1 if cfg.get("rem") else None)
         new, ended = generate_batch(model, heads, vocab, a.max_tokens if a.full else a.new_notes * 5,
                                     None if a.full else a.new_notes, a.temperature, a.top_p, L, run,
-                                    progress=250 if a.full else 0, pinned=pin, remaining=rem, dur_first=DUR_FIRST)
+                                    progress=250 if a.full else 0, pinned=pin, remaining=rem, dur_first=DUR_FIRST, copy_penalty=a.copy_penalty)
         for x, ids, e in zip(chunk, new, ended):
             toks = vocab.decode(ids)
             update(gen, *parse_groups(toks, x["meta"]["makam"]), x, e)
@@ -210,10 +224,10 @@ if not REF_ONLY:
                 full_samples.append(dict(fname=x["fname"], prefix=x["prefix"], ended=bool(e), tokens=" ".join(toks)))
         print(f"{min(b + a.batch, len(pieces))}/{len(pieces)}", flush=True)
 
-tag = f"gen_prompt{a.prompt}" + ("_full" if a.full else "") + ("_constrained" if a.constrain else "")
+tag = f"gen_prompt{a.prompt}" + ("_full" if a.full else "") + ("_constrained" if a.constrain else "") + a.suffix
 res = dict(run=os.path.basename(a.run.rstrip("/")), scenario=tag, pieces=len(pieces), prompt_notes=a.prompt,
            new_notes=None if a.full else a.new_notes, full=a.full, constrained=a.constrain,
-           temperature=a.temperature, top_p=a.top_p,
+           temperature=a.temperature, top_p=a.top_p, copy_penalty=a.copy_penalty,
            generated=None if REF_ONLY else finish(gen), reference=finish(real))
 if not REF_ONLY:
     json.dump(res, open(os.path.join(a.run, tag + ".json"), "w"), indent=1)
