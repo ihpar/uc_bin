@@ -45,12 +45,33 @@ Without makam/usul/form labels, scenario 2 output has a scale overlap of 0.61 an
 | Model (scenario 2, free decoding) | Ended by model | Length / target | Ends on karar |
 |---|---|---|---|
 | Transformer | 40% | 2.97 | 34% |
-| Transformer + position, meter, countdown | 93% | 0.99 | 21% |
+| Transformer + position, meter, countdown | 93% | 0.98 | 22% |
 | LSTM | 85% | 1.98 | 68% |
-| LSTM + position, meter, countdown | 95% | 0.99 | 49% |
+| LSTM + position, meter, countdown | 96% | 0.99 | 52% |
 | *Real music* | | 1.00 | 97% |
 
-Without a countdown of the remaining measures the models do not know when to stop. With it they end at the requested length, but they do not prepare the ending: only 21–49% of pieces finish on the karar, against 97% of real pieces. The baseline has no notion of long-range form.
+Without a countdown of the remaining measures the models do not know when to stop. With it they end at the requested length, but they do not prepare the ending. Models that choose their own ending land on the karar in about 80–85% of the pieces they end; models that are told when to end do not steer there in time.
+
+Three follow-up experiments on the countdown models (all 241 test pieces, scenario 2):
+
+| Hypothesis | Test | Result |
+|---|---|---|
+| The model picks the pitch before it knows the note is the last one | Write the duration before the pitch | No change (Transformer 20%, LSTM 49%) |
+| The decoding constraint forces a full final measure, while real pieces mostly end on a short one | Let the last measure stop early | Small gain under constraints (Transformer 17% to 27%, LSTM 40% to 45%) |
+| The Transformer loops: 39% of its measures repeat one of the two before (real music 3%, LSTM 0.3%) | Penalise literal repetition of a recent measure | Loops disappear (1–6%) and scale overlap rises slightly, but karar endings stay at 24–28% |
+
+So the failure is not a decoding artefact. Two observations describe it:
+
+- **Where pieces end.** The Transformer's most frequent final pitches are the karar (27%), the fifth above it (15%), the fourth (10%) and the octave (8%): notes on which inner phrases come to rest. It produces a phrase ending, not the final one.
+- **Seyir.** Mean pitch in commas above the karar, per tenth of the piece:
+
+| | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Real music | 27.7 | 25.2 | 26.6 | 27.1 | 26.0 | 28.1 | 29.4 | 31.2 | 26.9 | 19.1 |
+| LSTM (countdown, constrained) | 25.9 | 24.9 | 25.4 | 26.6 | 24.4 | 25.3 | 26.1 | 26.1 | 26.4 | 20.3 |
+| Transformer (countdown, constrained) | 24.4 | 24.4 | 25.5 | 25.6 | 25.5 | 24.8 | 25.0 | 24.8 | 24.8 | 24.3 |
+
+Real pieces rise around three quarters of the way through and descend to the karar. The LSTM reproduces the final descent but not the rise; the Transformer is flat. Neither model has a notion of the large-scale melodic path of a makam.
 
 ### 5. Capacity is not the bottleneck
 
@@ -62,7 +83,7 @@ The Transformer predicts held-out music far better (2.0 against 3.1 bits per not
 
 ## Open problems that the project addresses
 
-1. **Form and cadence:** ending on the karar, phrase structure, seyir. Candidate methods: section and phrase tokens from the SymbTr annotations, longer countdown horizon, auxiliary objectives.
+1. **Form and seyir:** ending on the karar, the rise and descent across a piece, phrase structure. Local conditioning and decoding rules do not solve it (finding 4). Candidate methods: section and phrase tokens from the SymbTr annotations, position-in-piece conditioning, a planned pitch contour as a control signal, auxiliary objectives.
 2. **Usul changes inside a piece** (4.4% of pieces): a meter token at the change point.
 3. **Ornaments:** currently the ornamented note is kept and the ornament type is dropped.
 4. **Evaluation:** metrics for melodic quality, 3–5 seeds with paired tests, blind expert evaluation.
