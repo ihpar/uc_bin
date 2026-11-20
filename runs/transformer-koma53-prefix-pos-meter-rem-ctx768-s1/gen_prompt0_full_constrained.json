@@ -9,18 +9,55 @@
  "temperature": 1.0,
  "top_p": 0.95,
  "generated": {
-  "scale_overlap": 0.8589410094340933,
-  "off_scale_rate": 0.004097347656621352,
-  "bar_validity": 0.9285714285714286,
-  "bar_validity_meter": 0.9994151191694692,
-  "copy_rate": 0.06775397296895885,
-  "grammar_ok": 0.9998475623425185,
-  "notes": 105190,
-  "measures": 13678,
-  "ends_on_karar": 0.1825726141078838,
-  "eos_rate": 0.9336099585062241,
-  "mean_notes": 454.00414937759336,
-  "length_ratio": 0.9879350798538479
+  "scale_overlap": 0.8702367536688527,
+  "off_scale_rate": 0.0081329941600086,
+  "bar_validity": 0.9276141384388807,
+  "bar_validity_meter": 1.0,
+  "copy_rate": 0.05310348461430378,
+  "grammar_ok": 0.9998376221039048,
+  "notes": 111644,
+  "measures": 13580,
+  "ends_on_karar": 0.17012448132780084,
+  "eos_rate": 0.9253112033195021,
+  "mean_notes": 479.49792531120335,
+  "length_ratio": 0.9842385053526357,
+  "ends_on_karar_any_octave": 0.22406639004149378,
+  "karar_in_last_measure": 0.4190871369294606,
+  "final_note_dur": 0.17181016597510373,
+  "final_pitch_top": [
+   [
+    0,
+    41
+   ],
+   [
+    31,
+    38
+   ],
+   [
+    22,
+    34
+   ],
+   [
+    13,
+    16
+   ],
+   [
+    53,
+    13
+   ],
+   [
+    44,
+    12
+   ],
+   [
+    5,
+    11
+   ],
+   [
+    17,
+    10
+   ]
+  ]
  },
  "reference": {
   "scale_overlap": 0.9221633433402594,
@@ -34,6 +71,35 @@
   "ends_on_karar": 0.966804979253112,
   "eos_rate": null,
   "mean_notes": 453.75103734439836,
-  "length_ratio": 1.0
+  "length_ratio": 1.0,
+  "ends_on_karar_any_octave": 0.979253112033195,
+  "karar_in_last_measure": 0.7676348547717843,
+  "final_note_dur": 0.4299792531120332,
+  "final_pitch_top": [
+   [
+    0,
+    233
+   ],
+   [
+    53,
+    3
+   ],
+   [
+    31,
+    2
+   ],
+   [
+    1,
+    1
+   ],
+   [
+    38,
+    1
+   ],
+   [
+    13,
+    1
+   ]
+  ]
  }
 }

@@ -1,0 +1,105 @@
+{
+ "run": "lstm-koma53-prefix-pos-meter-rem-dp-do0.5-s1",
+ "scenario": "gen_prompt0_full_constrained",
+ "pieces": 241,
+ "prompt_notes": 0,
+ "new_notes": null,
+ "full": true,
+ "constrained": true,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "generated": {
+  "scale_overlap": 0.8763110600130606,
+  "off_scale_rate": 0.008850809303453432,
+  "bar_validity": 0.9264695249801171,
+  "bar_validity_meter": 1.0,
+  "copy_rate": 0.05067604163589274,
+  "grammar_ok": 0.9998497511503428,
+  "notes": 98974,
+  "measures": 13831,
+  "ends_on_karar": 0.42323651452282157,
+  "eos_rate": 0.9585062240663901,
+  "mean_notes": 428.35684647302907,
+  "length_ratio": 0.9930227944477862,
+  "ends_on_karar_any_octave": 0.44813278008298757,
+  "karar_in_last_measure": 0.6763485477178424,
+  "final_note_dur": 0.23366182572614108,
+  "final_pitch_top": [
+   [
+    0,
+    102
+   ],
+   [
+    22,
+    19
+   ],
+   [
+    31,
+    18
+   ],
+   [
+    9,
+    18
+   ],
+   [
+    13,
+    15
+   ],
+   [
+    5,
+    9
+   ],
+   [
+    14,
+    6
+   ],
+   [
+    17,
+    6
+   ]
+  ]
+ },
+ "reference": {
+  "scale_overlap": 0.9221633433402594,
+  "off_scale_rate": 0.022355319879449127,
+  "bar_validity": 0.9146532120523024,
+  "bar_validity_meter": 0.9723564525298465,
+  "copy_rate": 0.05953541939498639,
+  "grammar_ok": 1.0,
+  "notes": 104852,
+  "measures": 14072,
+  "ends_on_karar": 0.966804979253112,
+  "eos_rate": null,
+  "mean_notes": 453.75103734439836,
+  "length_ratio": 1.0,
+  "ends_on_karar_any_octave": 0.979253112033195,
+  "karar_in_last_measure": 0.7676348547717843,
+  "final_note_dur": 0.4299792531120332,
+  "final_pitch_top": [
+   [
+    0,
+    233
+   ],
+   [
+    53,
+    3
+   ],
+   [
+    31,
+    2
+   ],
+   [
+    1,
+    1
+   ],
+   [
+    38,
+    1
+   ],
+   [
+    13,
+    1
+   ]
+  ]
+ }
+}

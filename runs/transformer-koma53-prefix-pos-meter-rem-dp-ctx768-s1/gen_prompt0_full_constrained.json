@@ -1,0 +1,105 @@
+{
+ "run": "transformer-koma53-prefix-pos-meter-rem-dp-ctx768-s1",
+ "scenario": "gen_prompt0_full_constrained",
+ "pieces": 241,
+ "prompt_notes": 0,
+ "new_notes": null,
+ "full": true,
+ "constrained": true,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "generated": {
+  "scale_overlap": 0.8359320902493481,
+  "off_scale_rate": 0.0046617651180388825,
+  "bar_validity": 0.927708196000879,
+  "bar_validity_meter": 0.999926756024317,
+  "copy_rate": 0.05343497495521188,
+  "grammar_ok": 0.9998575422476272,
+  "notes": 107041,
+  "measures": 13653,
+  "ends_on_karar": 0.1950207468879668,
+  "eos_rate": 0.941908713692946,
+  "mean_notes": 460.9585062240664,
+  "length_ratio": 0.9870450067169656,
+  "ends_on_karar_any_octave": 0.2946058091286307,
+  "karar_in_last_measure": 0.46887966804979253,
+  "final_note_dur": 0.19139004149377592,
+  "final_pitch_top": [
+   [
+    0,
+    47
+   ],
+   [
+    31,
+    32
+   ],
+   [
+    53,
+    24
+   ],
+   [
+    22,
+    21
+   ],
+   [
+    13,
+    18
+   ],
+   [
+    17,
+    10
+   ],
+   [
+    9,
+    8
+   ],
+   [
+    5,
+    8
+   ]
+  ]
+ },
+ "reference": {
+  "scale_overlap": 0.9221633433402594,
+  "off_scale_rate": 0.022355319879449127,
+  "bar_validity": 0.9146532120523024,
+  "bar_validity_meter": 0.9723564525298465,
+  "copy_rate": 0.05953541939498639,
+  "grammar_ok": 1.0,
+  "notes": 104852,
+  "measures": 14072,
+  "ends_on_karar": 0.966804979253112,
+  "eos_rate": null,
+  "mean_notes": 453.75103734439836,
+  "length_ratio": 1.0,
+  "ends_on_karar_any_octave": 0.979253112033195,
+  "karar_in_last_measure": 0.7676348547717843,
+  "final_note_dur": 0.4299792531120332,
+  "final_pitch_top": [
+   [
+    0,
+    233
+   ],
+   [
+    53,
+    3
+   ],
+   [
+    31,
+    2
+   ],
+   [
+    1,
+    1
+   ],
+   [
+    38,
+    1
+   ],
+   [
+    13,
+    1
+   ]
+  ]
+ }
+}

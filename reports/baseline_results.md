@@ -9,13 +9,15 @@ Bits per note are comparable across encodings; per-token perplexity is not. `tet
 | Model | Pitch | Cond | Variant | Seeds | Params | Best step | Test bits/note | pitch | duration | Few-shot bits/note | Few-shot UNK |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | lstm | koma53 | prefix | dropout 0.5 | 1 | 3.95M | 5000 | 3.098 | 1.951 | 1.096 | 3.426 | 0.1% |
-| lstm | koma53 | prefix | POS tokens, meter, countdown, dropout 0.5 | 1 | 3.99M | 5000 | 3.178 | 1.977 | 1.104 | 3.513 | 0.1% |
+| lstm | koma53 | prefix | POS tokens, meter, countdown, dropout 0.5 | 1 | 3.99M | 4500 | 3.165 | 1.982 | 1.101 | 3.511 | 0.1% |
+| lstm | koma53 | prefix | POS tokens, meter, countdown, duration first, dropout 0.5 | 1 | 3.99M | 4500 | 3.145 | 1.891 | 1.175 | 3.510 | 0.1% |
 | transformer | aeu | prefix | – | 1 | 5.01M | 5000 | 2.020 | 1.231 | 0.726 | 2.445 | 0.1% |
 | transformer | koma53 | none | – | 1 | 4.95M | 5500 | 2.059 | 1.259 | 0.729 | 2.439 | 0.1% |
 | transformer | koma53 | prefix | – | 1 | 5.01M | 5000 | 2.071 | 1.270 | 0.728 | 2.522 | 0.1% |
 | transformer | koma53 | prefix | POS tokens, context 768 | 1 | 5.11M | 5000 | 1.947 | 1.209 | 0.670 | 2.337 | 0.1% |
 | transformer | koma53 | prefix | POS tokens, meter, context 768 | 1 | 5.11M | 6000 | 1.983 | 1.244 | 0.686 | 2.413 | 0.1% |
-| transformer | koma53 | prefix | POS tokens, meter, countdown, context 768 | 1 | 5.12M | 5500 | 2.005 | 1.248 | 0.685 | 2.414 | 0.1% |
+| transformer | koma53 | prefix | POS tokens, meter, countdown, context 768 | 1 | 5.12M | 5000 | 2.000 | 1.245 | 0.688 | 2.404 | 0.1% |
+| transformer | koma53 | prefix | POS tokens, meter, countdown, duration first, context 768 | 1 | 5.12M | 6000 | 1.976 | 1.169 | 0.741 | 2.383 | 0.1% |
 | transformer | tet12 | prefix | – | 1 | 4.99M | 5500 | 1.994 | 1.197 | 0.732 | 2.379 | 0.1% |
 
 ## Scenario 1: autocomplete
@@ -28,6 +30,7 @@ The model continues a test piece from its first 16 notes for 64 notes.
 | lstm | koma53 | prefix | dropout 0.5 | constrained | 0.869 | 0.5% | 99.1% | 95.2% | 5.5% | 100.0% |
 | lstm | koma53 | prefix | POS tokens, meter, countdown, dropout 0.5 | free | 0.885 | 0.5% | 93.4% | 98.1% | 5.7% | 99.9% |
 | lstm | koma53 | prefix | POS tokens, meter, countdown, dropout 0.5 | constrained | 0.877 | 0.5% | 93.7% | 100.0% | 6.0% | 99.9% |
+| lstm | koma53 | prefix | POS tokens, meter, countdown, duration first, dropout 0.5 | free | 0.882 | 0.4% | 93.1% | 97.5% | 5.1% | 100.0% |
 | transformer | aeu | prefix | – | free | 0.817 | 5.8% | 60.8% | 62.2% | 4.4% | 100.0% |
 | transformer | aeu | prefix | – | constrained | 0.829 | 5.3% | 99.0% | 95.1% | 4.2% | 100.0% |
 | transformer | koma53 | none | – | free | 0.869 | 2.3% | 50.7% | 52.7% | 4.8% | 100.0% |
@@ -40,6 +43,7 @@ The model continues a test piece from its first 16 notes for 64 notes.
 | transformer | koma53 | prefix | POS tokens, meter, context 768 | constrained | 0.886 | 0.6% | 94.5% | 100.0% | 4.3% | 100.0% |
 | transformer | koma53 | prefix | POS tokens, meter, countdown, context 768 | free | 0.868 | 0.9% | 93.8% | 98.4% | 5.6% | 100.0% |
 | transformer | koma53 | prefix | POS tokens, meter, countdown, context 768 | constrained | 0.882 | 0.6% | 93.8% | 100.0% | 4.9% | 100.0% |
+| transformer | koma53 | prefix | POS tokens, meter, countdown, duration first, context 768 | free | 0.867 | 0.7% | 94.1% | 98.1% | 5.0% | 100.0% |
 | transformer | tet12 | prefix | – | free | 0.733 | 13.0% | 52.7% | 53.8% | 3.4% | 100.0% |
 | transformer | tet12 | prefix | – | constrained | 0.746 | 12.7% | 98.8% | 95.4% | 2.9% | 100.0% |
 | *real music (53-comma)* | | | | | 0.908 | 1.4% | 94.6% | 99.5% | 9.1% | 100.0% |
@@ -53,8 +57,10 @@ Only makam, usul and form are given; the model writes until it ends the piece it
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | lstm | koma53 | prefix | dropout 0.5 | free | 0.884 | 1.7% | 90.4% | 87.2% | 5.0% | 100.0% | 67.6% | 84.6% | 538.286 | 1.975 |
 | lstm | koma53 | prefix | dropout 0.5 | constrained | 0.882 | 1.7% | 98.6% | 94.4% | 5.0% | 100.0% | 15.4% | 2.5% | 1309.224 | 4.779 |
-| lstm | koma53 | prefix | POS tokens, meter, countdown, dropout 0.5 | free | 0.897 | 1.3% | 92.1% | 95.4% | 5.4% | 100.0% | 49.4% | 95.0% | 439.394 | 0.991 |
-| lstm | koma53 | prefix | POS tokens, meter, countdown, dropout 0.5 | constrained | 0.893 | 0.8% | 92.5% | 100.0% | 5.4% | 100.0% | 37.3% | 95.9% | 434.253 | 0.994 |
+| lstm | koma53 | prefix | POS tokens, meter, countdown, dropout 0.5 | free | 0.884 | 1.3% | 91.3% | 95.4% | 4.4% | 100.0% | 51.9% | 95.9% | 415.651 | 0.988 |
+| lstm | koma53 | prefix | POS tokens, meter, countdown, dropout 0.5 | constrained | 0.885 | 0.9% | 92.7% | 100.0% | 4.4% | 100.0% | 39.8% | 97.1% | 409.593 | 0.994 |
+| lstm | koma53 | prefix | POS tokens, meter, countdown, duration first, dropout 0.5 | free | 0.876 | 1.5% | 93.6% | 96.3% | 4.6% | 99.9% | 49.4% | 94.6% | 424.809 | 0.985 |
+| lstm | koma53 | prefix | POS tokens, meter, countdown, duration first, dropout 0.5 | constrained | 0.876 | 0.9% | 92.6% | 100.0% | 5.1% | 100.0% | 42.3% | 95.9% | 428.357 | 0.993 |
 | transformer | aeu | prefix | – | free | 0.773 | 6.0% | 50.1% | 47.9% | 3.0% | 100.0% | 35.3% | 37.3% | 993.544 | 3.478 |
 | transformer | aeu | prefix | – | constrained | 0.802 | 6.1% | 97.7% | 93.6% | 4.8% | 100.0% | 19.9% | 19.9% | 1175.747 | 3.847 |
 | transformer | koma53 | none | – | free | 0.607 | 18.0% | 15.0% | 14.8% | 2.6% | 100.0% | 17.0% | 43.6% | 869.158 | 3.109 |
@@ -65,8 +71,10 @@ Only makam, usul and form are given; the model writes until it ends the piece it
 | transformer | koma53 | prefix | POS tokens, context 768 | constrained | 0.845 | 0.5% | 98.3% | 93.4% | 3.7% | 99.9% | 12.0% | 3.7% | 918.983 | 2.784 |
 | transformer | koma53 | prefix | POS tokens, meter, context 768 | free | 0.845 | 0.5% | 94.5% | 98.4% | 3.6% | 99.9% | 26.1% | 24.9% | 766.378 | 2.349 |
 | transformer | koma53 | prefix | POS tokens, meter, context 768 | constrained | 0.849 | 0.5% | 92.9% | 100.0% | 3.2% | 99.9% | 8.3% | 3.3% | 899.772 | 2.813 |
-| transformer | koma53 | prefix | POS tokens, meter, countdown, context 768 | free | 0.861 | 0.4% | 93.9% | 97.6% | 4.9% | 100.0% | 21.2% | 93.4% | 455.187 | 0.987 |
-| transformer | koma53 | prefix | POS tokens, meter, countdown, context 768 | constrained | 0.859 | 0.4% | 92.9% | 99.9% | 6.8% | 100.0% | 18.3% | 93.4% | 454.004 | 0.988 |
+| transformer | koma53 | prefix | POS tokens, meter, countdown, context 768 | free | 0.867 | 0.5% | 94.0% | 98.2% | 4.6% | 100.0% | 21.6% | 92.5% | 477.900 | 0.981 |
+| transformer | koma53 | prefix | POS tokens, meter, countdown, context 768 | constrained | 0.870 | 0.8% | 92.8% | 100.0% | 5.3% | 100.0% | 17.0% | 92.5% | 479.498 | 0.984 |
+| transformer | koma53 | prefix | POS tokens, meter, countdown, duration first, context 768 | free | 0.849 | 0.7% | 93.6% | 96.4% | 4.6% | 100.0% | 19.9% | 92.1% | 463.249 | 0.980 |
+| transformer | koma53 | prefix | POS tokens, meter, countdown, duration first, context 768 | constrained | 0.836 | 0.5% | 92.8% | 100.0% | 5.3% | 100.0% | 19.5% | 94.2% | 460.959 | 0.987 |
 | transformer | tet12 | prefix | – | free | 0.686 | 12.0% | 43.6% | 42.2% | 2.1% | 100.0% | 26.1% | 26.6% | 1076.971 | 3.191 |
 | transformer | tet12 | prefix | – | constrained | 0.715 | 12.8% | 97.7% | 93.7% | 3.3% | 100.0% | 12.9% | 9.5% | 1267.220 | 3.734 |
 | *real music (53-comma)* | | | | | 0.922 | 2.2% | 91.5% | 97.2% | 6.0% | 100.0% | 96.7% | – | 453.751 | 1.000 |
