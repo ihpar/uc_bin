@@ -1,0 +1,145 @@
+{
+ "run": "transformer-koma53-prefix-pos-meter-rem-ctx768-s1",
+ "scenario": "gen_prompt0_full_constrained_mix0.5_0.5_sel8_k4_cp2",
+ "pieces": 241,
+ "prompt_notes": 0,
+ "new_notes": null,
+ "full": true,
+ "constrained": true,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "copy_penalty": 2.0,
+ "select": 8,
+ "select_measures": 4,
+ "mix": {
+  "run": "lstm-koma53-prefix-pos-meter-rem-do0.5-s1",
+  "body": 0.5,
+  "end": 0.5,
+  "measures": 4
+ },
+ "selection": {
+  "candidate_karar_rate": 0.4033119658119658,
+  "karar_candidate_found": 0.9145299145299145,
+  "pieces": 234
+ },
+ "generated": {
+  "scale_overlap": 0.8928560358904538,
+  "off_scale_rate": 0.0031533109765253518,
+  "bar_validity": 0.9274720487875708,
+  "bar_validity_meter": 1.0,
+  "copy_rate": 0.07791825933548956,
+  "grammar_ok": 0.9999248021356193,
+  "notes": 99895,
+  "measures": 13774,
+  "ends_on_karar": 0.8879668049792531,
+  "eos_rate": 0.970954356846473,
+  "mean_notes": 430.36099585062243,
+  "length_ratio": 0.9927565130998836,
+  "ends_on_karar_any_octave": 0.9004149377593361,
+  "karar_in_last_measure": 0.7468879668049793,
+  "final_note_dur": 0.3104253112033195,
+  "final_pitch_top": [
+   [
+    0,
+    214
+   ],
+   [
+    22,
+    6
+   ],
+   [
+    31,
+    4
+   ],
+   [
+    13,
+    3
+   ],
+   [
+    53,
+    3
+   ],
+   [
+    18,
+    2
+   ],
+   [
+    7,
+    2
+   ],
+   [
+    9,
+    2
+   ]
+  ],
+  "repeated_measures": 0.004747878151682178,
+  "pitch_by_tenth": [
+   25.8,
+   24.2,
+   24.8,
+   24.9,
+   25.6,
+   24.8,
+   25.2,
+   26.1,
+   24.7,
+   20.6
+  ]
+ },
+ "reference": {
+  "scale_overlap": 0.9221633433402594,
+  "off_scale_rate": 0.022355319879449127,
+  "bar_validity": 0.9146532120523024,
+  "bar_validity_meter": 0.9723564525298465,
+  "copy_rate": 0.05953541939498639,
+  "grammar_ok": 1.0,
+  "notes": 104852,
+  "measures": 14072,
+  "ends_on_karar": 0.966804979253112,
+  "eos_rate": null,
+  "mean_notes": 453.75103734439836,
+  "length_ratio": 1.0,
+  "ends_on_karar_any_octave": 0.979253112033195,
+  "karar_in_last_measure": 0.7676348547717843,
+  "final_note_dur": 0.4299792531120332,
+  "final_pitch_top": [
+   [
+    0,
+    233
+   ],
+   [
+    53,
+    3
+   ],
+   [
+    31,
+    2
+   ],
+   [
+    1,
+    1
+   ],
+   [
+    38,
+    1
+   ],
+   [
+    13,
+    1
+   ]
+  ],
+  "repeated_measures": 0.03234810416436696,
+  "pitch_by_tenth": [
+   27.7,
+   25.2,
+   26.6,
+   27.1,
+   26.0,
+   28.1,
+   29.4,
+   31.2,
+   26.9,
+   19.1
+  ]
+ }
+}

@@ -1,0 +1,145 @@
+{
+ "run": "transformer-koma53-prefix-pos-meter-rem-ctx768-s1",
+ "scenario": "gen_prompt0_full_constrained_mix0.3_1_sel8_k4_cp2",
+ "pieces": 241,
+ "prompt_notes": 0,
+ "new_notes": null,
+ "full": true,
+ "constrained": true,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "copy_penalty": 2.0,
+ "select": 8,
+ "select_measures": 4,
+ "mix": {
+  "run": "lstm-koma53-prefix-pos-meter-rem-do0.5-s1",
+  "body": 0.3,
+  "end": 1.0,
+  "measures": 4
+ },
+ "selection": {
+  "candidate_karar_rate": 0.5016163793103449,
+  "karar_candidate_found": 0.9612068965517241,
+  "pieces": 232
+ },
+ "generated": {
+  "scale_overlap": 0.8913633677623115,
+  "off_scale_rate": 0.003087224104404306,
+  "bar_validity": 0.9278170296452765,
+  "bar_validity_meter": 1.0,
+  "copy_rate": 0.06531701716338086,
+  "grammar_ok": 0.9999057004102032,
+  "notes": 99766,
+  "measures": 13729,
+  "ends_on_karar": 0.9336099585062241,
+  "eos_rate": 0.9626556016597511,
+  "mean_notes": 429.83402489626553,
+  "length_ratio": 0.9911943640710221,
+  "ends_on_karar_any_octave": 0.9543568464730291,
+  "karar_in_last_measure": 0.7966804979253111,
+  "final_note_dur": 0.36929460580912865,
+  "final_pitch_top": [
+   [
+    0,
+    225
+   ],
+   [
+    53,
+    5
+   ],
+   [
+    17,
+    3
+   ],
+   [
+    31,
+    3
+   ],
+   [
+    22,
+    2
+   ],
+   [
+    25,
+    1
+   ],
+   [
+    36,
+    1
+   ],
+   [
+    44,
+    1
+   ]
+  ],
+  "repeated_measures": 0.007602238932943712,
+  "pitch_by_tenth": [
+   25.4,
+   23.7,
+   24.9,
+   25.3,
+   24.4,
+   25.2,
+   25.3,
+   25.0,
+   24.4,
+   19.4
+  ]
+ },
+ "reference": {
+  "scale_overlap": 0.9221633433402594,
+  "off_scale_rate": 0.022355319879449127,
+  "bar_validity": 0.9146532120523024,
+  "bar_validity_meter": 0.9723564525298465,
+  "copy_rate": 0.05953541939498639,
+  "grammar_ok": 1.0,
+  "notes": 104852,
+  "measures": 14072,
+  "ends_on_karar": 0.966804979253112,
+  "eos_rate": null,
+  "mean_notes": 453.75103734439836,
+  "length_ratio": 1.0,
+  "ends_on_karar_any_octave": 0.979253112033195,
+  "karar_in_last_measure": 0.7676348547717843,
+  "final_note_dur": 0.4299792531120332,
+  "final_pitch_top": [
+   [
+    0,
+    233
+   ],
+   [
+    53,
+    3
+   ],
+   [
+    31,
+    2
+   ],
+   [
+    1,
+    1
+   ],
+   [
+    38,
+    1
+   ],
+   [
+    13,
+    1
+   ]
+  ],
+  "repeated_measures": 0.03234810416436696,
+  "pitch_by_tenth": [
+   27.7,
+   25.2,
+   26.6,
+   27.1,
+   26.0,
+   28.1,
+   29.4,
+   31.2,
+   26.9,
+   19.1
+  ]
+ }
+}
