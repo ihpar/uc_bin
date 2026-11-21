@@ -19,6 +19,10 @@ Preliminary work for a TÜBİTAK 3501 resubmission: makam-aware symbolic music m
 | `scripts/05_summarize_runs.py` | collects the main grid → `reports/baseline_results.md` |
 | `scripts/run_karar.sh` … `run_karar4.sh` | follow-up experiments on piece endings (token order, loop penalty, ending selection, blending) |
 | `scripts/06_collect_results.py` | flattens every result file into `reports/results/*.csv` with its origin |
+| `src/register.py` | registers a scan or photo of a printed page to the PDF, to carry the automatic labels over |
+| `scripts/07_export_omr_dataset.py` | symbol-detection dataset from the labelled PDFs and from `data/scans` → `omr_data/` |
+| `scripts/08_train_omr.py` | trains and evaluates the baseline symbol detector → `runs/omr/<name>/results.json` |
+| `scripts/run_omr.sh` | the OMR preliminary study end to end |
 
 ## Usage
 

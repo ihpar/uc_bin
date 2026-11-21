@@ -5,3 +5,6 @@ runs/**/*.pt
 runs/*-smoke/
 runs/sanity-*/
 checkpoints.tar.gz
+omr_data/
+omr_work/
+*.pt
