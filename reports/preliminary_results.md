@@ -83,7 +83,23 @@ Real pieces rise around three quarters of the way through and descend to the kar
 | Transformer (loop penalty 2) | 16, last 8 measures | 24% | 58% | 54% |
 | *Real music* | | | | 97% |
 
-With the LSTM, selection brings karar endings close to real music with no loss in scale overlap (0.89), measure validity or length. With the Transformer it does not: a quarter of its sampled endings reach the karar, but they are concentrated in half of the pieces. If attempts were independent, 8 samples would succeed for about 90% of pieces; the observed 51% means that for the other half the piece is, by its last measures, in a state from which the model does not cadence at all. Selection cannot repair a body that has not been heading home, which again points to large-scale form.
+With the LSTM, selection brings karar endings close to real music with no loss in scale overlap (0.89), measure validity or length. With the Transformer alone it does not: a quarter of its sampled endings reach the karar, but they are concentrated in half of the pieces.
+
+**Combining the two models.** Both models use the same tokens, so their next-token predictions can be blended at every step (log-linear), with one weight for the body and one for the last four measures. All rows: constrained decoding, loop penalty 2, selection among 8 endings.
+
+| LSTM share in body / ending | Single ending on karar | Ends on karar | Repeated measures | Scale overlap | Off-scale |
+|---|---|---|---|---|---|
+| 0 / 1 (Transformer body, LSTM ending) | 48% | 93% | 3.4% | 0.873 | 0.7% |
+| 0.3 / 1 | 50% | 93% | 0.8% | 0.891 | 0.3% |
+| 0.5 / 0.5 | 40% | 89% | 0.5% | 0.893 | 0.3% |
+| 0.7 / 0.7 | 47% | 89% | 0.3% | 0.897 | 0.6% |
+| LSTM alone | 50% | 91% | 0.1% | 0.880 | 0.8% |
+| Transformer alone (earlier checkpoint) | 28% | 48% | 5.9% | 0.886 | 0.9% |
+| *Real music* | | 97% | 3.2% | 0.922 | 2.2% |
+
+The hand-off row settles where the Transformer fails. The LSTM cadences from a body written entirely by the Transformer as well as from its own (48% against 50% per attempt). The Transformer's bodies are therefore not the obstacle; what it lacks is the ability to write the ending itself. Differences of a few points between the rows with an LSTM ending are within the variation expected from about 240 pieces.
+
+In every combination the mean pitch falls to 19–21 commas above the karar in the last tenth (real music: 19.1), but none shows the rise around three quarters of the piece (real music: 31.2; models: 24–26). The ending is repaired; the seyir across the piece is not.
 
 ### 5. Capacity is not the bottleneck
 
