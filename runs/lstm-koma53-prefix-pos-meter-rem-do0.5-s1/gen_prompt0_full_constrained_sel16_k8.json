@@ -1,0 +1,139 @@
+{
+ "run": "lstm-koma53-prefix-pos-meter-rem-do0.5-s1",
+ "scenario": "gen_prompt0_full_constrained_sel16_k8",
+ "pieces": 241,
+ "prompt_notes": 0,
+ "new_notes": null,
+ "full": true,
+ "constrained": true,
+ "temperature": 1.0,
+ "top_p": 0.95,
+ "copy_penalty": 0.0,
+ "select": 16,
+ "select_measures": 8,
+ "selection": {
+  "candidate_karar_rate": 0.5098824786324786,
+  "karar_candidate_found": 0.9572649572649573,
+  "pieces": 234
+ },
+ "generated": {
+  "scale_overlap": 0.8846045490922609,
+  "off_scale_rate": 0.014425929202618733,
+  "bar_validity": 0.9269446263552354,
+  "bar_validity_meter": 0.9999272356836207,
+  "copy_rate": 0.047105711504137594,
+  "grammar_ok": 0.9999132597004569,
+  "notes": 96077,
+  "measures": 13743,
+  "ends_on_karar": 0.9336099585062241,
+  "eos_rate": 0.970954356846473,
+  "mean_notes": 416.1618257261411,
+  "length_ratio": 0.9916826084710205,
+  "ends_on_karar_any_octave": 0.9336099585062241,
+  "karar_in_last_measure": 0.8049792531120332,
+  "final_note_dur": 0.3573651452282158,
+  "final_pitch_top": [
+   [
+    0,
+    225
+   ],
+   [
+    22,
+    3
+   ],
+   [
+    31,
+    3
+   ],
+   [
+    5,
+    2
+   ],
+   [
+    13,
+    2
+   ],
+   [
+    48,
+    1
+   ],
+   [
+    9,
+    1
+   ],
+   [
+    17,
+    1
+   ]
+  ],
+  "repeated_measures": 0.0029064930026145284,
+  "pitch_by_tenth": [
+   24.6,
+   22.4,
+   22.6,
+   22.0,
+   22.2,
+   22.2,
+   22.5,
+   23.4,
+   21.9,
+   16.4
+  ]
+ },
+ "reference": {
+  "scale_overlap": 0.9221633433402594,
+  "off_scale_rate": 0.022355319879449127,
+  "bar_validity": 0.9146532120523024,
+  "bar_validity_meter": 0.9723564525298465,
+  "copy_rate": 0.05953541939498639,
+  "grammar_ok": 1.0,
+  "notes": 104852,
+  "measures": 14072,
+  "ends_on_karar": 0.966804979253112,
+  "eos_rate": null,
+  "mean_notes": 453.75103734439836,
+  "length_ratio": 1.0,
+  "ends_on_karar_any_octave": 0.979253112033195,
+  "karar_in_last_measure": 0.7676348547717843,
+  "final_note_dur": 0.4299792531120332,
+  "final_pitch_top": [
+   [
+    0,
+    233
+   ],
+   [
+    53,
+    3
+   ],
+   [
+    31,
+    2
+   ],
+   [
+    1,
+    1
+   ],
+   [
+    38,
+    1
+   ],
+   [
+    13,
+    1
+   ]
+  ],
+  "repeated_measures": 0.03234810416436696,
+  "pitch_by_tenth": [
+   27.7,
+   25.2,
+   26.6,
+   27.1,
+   26.0,
+   28.1,
+   29.4,
+   31.2,
+   26.9,
+   19.1
+  ]
+ }
+}
