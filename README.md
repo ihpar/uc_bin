@@ -16,7 +16,9 @@ Preliminary work for a TÜBİTAK 3501 resubmission: makam-aware symbolic music m
 | `src/generation.py` | batched sampling with optional usul-constrained decoding |
 | `scripts/04_evaluate_generation.py` | generation metrics for both usage scenarios, with reference values from real music |
 | `scripts/run_baselines.sh` | full experiment grid and regularisation sweep |
-| `scripts/05_summarize_runs.py` | collects all runs → `reports/baseline_results.md` |
+| `scripts/05_summarize_runs.py` | collects the main grid → `reports/baseline_results.md` |
+| `scripts/run_karar.sh` … `run_karar4.sh` | follow-up experiments on piece endings (token order, loop penalty, ending selection, blending) |
+| `scripts/06_collect_results.py` | flattens every result file into `reports/results/*.csv` with its origin |
 
 ## Usage
 
@@ -58,3 +60,11 @@ with free and usul-constrained decoding (`src/generation.py`):
 
 Likelihood is also reported on the `few_shot` pool, i.e. makams that never occur in training.
 Checkpoints (`runs/*/best.pt`) are git-ignored; do not commit them.
+
+## Results
+
+- `reports/preliminary_results.md`: findings for the proposal, with an audit section listing known issues.
+- `reports/results/`: all numbers as CSV (`likelihood`, `generation`, `reference`, `replicates`).
+- `reports/baseline_results.md`: automatic tables of the main grid; `_v1`, `_v2`: archived rounds.
+- `runs/README.md`: what each result file is and which session produced it.
+- `reports/data_report.md`, `reports/pdf_symbol_report.md`: data statistics and the OMR labelling feasibility study.

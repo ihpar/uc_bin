@@ -1,0 +1,9 @@
+run,commit,session,checkpoint,device,steps_run,val_bits_per_note,test_bits_per_note,test_pitch_bits,test_dur_bits
+transformer-koma53-prefix-pos-meter-rem-ctx768-s1,7430494,karar4,D,cuda,8000,2.0187,1.9844,1.2387,0.6808
+transformer-koma53-prefix-pos-meter-rem-ctx768-s1,db10801,karar3,C,cuda,8000,2.0307,2.0028,1.2438,0.6896
+transformer-koma53-prefix-pos-meter-rem-ctx768-s1,39426c1,karar,B,cuda,8000,2.0276,2.0,1.2447,0.6877
+transformer-koma53-prefix-pos-meter-rem-ctx768-s1,42dbf58,round3,A,cuda,8000,2.0349,2.0046,1.2476,0.6852
+lstm-koma53-prefix-pos-meter-rem-do0.5-s1,7430494,karar4,D,cuda,7500,3.1965,3.1648,1.9815,1.1014
+lstm-koma53-prefix-pos-meter-rem-do0.5-s1,db10801,karar3,C,cuda,7000,3.2079,3.1828,1.9857,1.1082
+lstm-koma53-prefix-pos-meter-rem-do0.5-s1,39426c1,karar,B,cuda,7500,3.1965,3.1648,1.9815,1.1014
+lstm-koma53-prefix-pos-meter-rem-do0.5-s1,42dbf58,round3,A,cuda,8000,3.1989,3.178,1.9774,1.1039

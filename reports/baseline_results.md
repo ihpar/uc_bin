@@ -16,7 +16,7 @@ Bits per note are comparable across encodings; per-token perplexity is not. `tet
 | transformer | koma53 | prefix | – | 1 | 5.01M | 5000 | 2.071 | 1.270 | 0.728 | 2.522 | 0.1% |
 | transformer | koma53 | prefix | POS tokens, context 768 | 1 | 5.11M | 5000 | 1.947 | 1.209 | 0.670 | 2.337 | 0.1% |
 | transformer | koma53 | prefix | POS tokens, meter, context 768 | 1 | 5.11M | 6000 | 1.983 | 1.244 | 0.686 | 2.413 | 0.1% |
-| transformer | koma53 | prefix | POS tokens, meter, countdown, context 768 | 1 | 5.12M | 5000 | 2.000 | 1.245 | 0.688 | 2.404 | 0.1% |
+| transformer | koma53 | prefix | POS tokens, meter, countdown, context 768 | 1 | 5.12M | 5000 | 1.984 | 1.239 | 0.681 | 2.394 | 0.1% |
 | transformer | koma53 | prefix | POS tokens, meter, countdown, duration first, context 768 | 1 | 5.12M | 6000 | 1.976 | 1.169 | 0.741 | 2.383 | 0.1% |
 | transformer | tet12 | prefix | – | 1 | 4.99M | 5500 | 1.994 | 1.197 | 0.732 | 2.379 | 0.1% |
 
