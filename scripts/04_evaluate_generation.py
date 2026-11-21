@@ -26,6 +26,8 @@ encodings, and each is also computed on the real test music as a reference value
   pitch_by_tenth  mean pitch in commas above the karar for each tenth of the piece (the seyir)
   ending diagnostics: ends_on_karar_any_octave, karar_in_last_measure, final_note_dur (mean,
   whole notes), final_pitch_top (most frequent final pitches in commas above the karar)
+  --mix RUN2 blends a second model at every step (log-linear, weights --mix_body and
+  --mix_end for the last --mix_measures measures); 0 / 1 hands the ending over to RUN2.
   --select N (countdown models, --full): the piece is generated up to its last
   --select_measures measures; N endings are then sampled and the most probable one whose
   last sounding note is the karar is kept (the most probable one overall if none qualifies).
@@ -54,6 +56,10 @@ p.add_argument("--batch", type=int, default=64); p.add_argument("--seed", type=i
 p.add_argument("--save_samples", action="store_true")
 p.add_argument("--copy_penalty", type=float, default=0.0, help="logit penalty on literally repeating a recent measure")
 p.add_argument("--suffix", default="", help="appended to the output file name")
+p.add_argument("--mix", default="", help="run directory of a second model (same tokenization) to blend with")
+p.add_argument("--mix_body", type=float, default=0.5, help="weight of the second model before the ending")
+p.add_argument("--mix_end", type=float, default=0.5, help="weight of the second model in the last --mix_measures measures")
+p.add_argument("--mix_measures", type=int, default=4)
 p.add_argument("--select", type=int, default=0, help="countdown models: sample this many endings and keep one that ends on the karar")
 p.add_argument("--select_measures", type=int, default=4, help="number of final measures that form the ending")
 a = p.parse_args()
@@ -88,6 +94,14 @@ def merge_ties(notes):
         else: out.append((koma, d))
     return out
 
+
+model2 = None
+if a.mix and not REF_ONLY:
+    cfg2 = json.load(open(os.path.join(a.mix, "config.json")))
+    v2 = json.load(open(os.path.join(a.mix, "vocab.json")))["itos"]
+    assert v2 == vocab.itos, "the two models must share tokenization and vocabulary"
+    model2 = build_model(cfg2["model"], len(vocab), cfg2).to(dev)
+    model2.load_state_dict(torch.load(os.path.join(a.mix, "best.pt"), map_location=dev)); model2.eval()
 
 # ---------- reference statistics from the training set
 N = 8
@@ -255,7 +269,7 @@ if not REF_ONLY:
             started = sum(1 for n in notes if n[0])          # measures already started in the prompt
             rem.append(x["n_bars"] - started - 1 if cfg.get("rem") else None)
         kw = dict(temperature=a.temperature, top_p=a.top_p, pinned=pin, dur_first=DUR_FIRST,
-                  copy_penalty=a.copy_penalty)
+                  copy_penalty=a.copy_penalty, model2=model2, mix=(a.mix_body, a.mix_end, a.mix_measures))
         limit = a.max_tokens if a.full else a.new_notes * 5
         select = a.select and a.full and cfg.get("rem")
         new, ended, info = generate_batch(model, heads, vocab, limit, None if a.full else a.new_notes,
@@ -276,6 +290,7 @@ res = dict(run=os.path.basename(a.run.rstrip("/")), scenario=tag, pieces=len(pie
            new_notes=None if a.full else a.new_notes, full=a.full, constrained=a.constrain,
            temperature=a.temperature, top_p=a.top_p, copy_penalty=a.copy_penalty,
            select=a.select, select_measures=a.select_measures if a.select else None,
+           mix=dict(run=os.path.basename(a.mix.rstrip("/")), body=a.mix_body, end=a.mix_end, measures=a.mix_measures) if a.mix else None,
            selection=dict(candidate_karar_rate=sel["cands_karar"] / sel["cands"], karar_candidate_found=sel["found"] / sel["pieces"],
                           pieces=sel["pieces"]) if sel["pieces"] else None,
            generated=None if REF_ONLY else finish(gen), reference=finish(real))

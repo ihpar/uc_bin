@@ -25,7 +25,8 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
                    temperature: float = 1.0, top_p: float = 0.95,
                    measure_len: list | None = None, running: list | None = None,
                    progress: int = 0, pinned: list | None = None, remaining: list | None = None,
-                   dur_first: bool = False, copy_penalty: float = 0.0, pause_rem: int | None = None):
+                   dur_first: bool = False, copy_penalty: float = 0.0, pause_rem: int | None = None,
+                   model2=None, mix: tuple = (0.0, 0.0, 0)):
     """heads: prompt token ids per sequence. measure_len[i] is a Fraction (or None for no
     constraint); running[i] is the duration already elapsed in the current measure of the prompt.
     pinned[i] is the number of leading tokens (BOS + conditioning prefix) that must stay
@@ -35,12 +36,17 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
     copy_penalty > 0 discourages literal loops: while the current measure is, so far, an
     exact copy of one of the two previous measures (at least two notes long), the logit of
     the pitch or duration that would continue the copy is lowered by this amount.
+    model2 with mix=(w_body, w_end, K) blends a second model that uses the same vocabulary:
+    next-token log-probabilities are averaged with weight w for model2, w_end inside the
+    last K measures of a countdown and w_body before. (0, 1, K) is a hand-off: `model`
+    writes the body and model2 the ending.
     pause_rem=K (countdown models only) stops a sequence just before the bar line that opens
     its last K measures, so that the ending can be generated separately (see select_ending
     in scripts/04_evaluate_generation.py).
     Returns the newly generated ids per sequence, whether each ended with EOS, and a dict
     with `paused` flags and the summed log-probability / token count of what was sampled."""
     model.eval()
+    if model2 is not None: model2.eval()
     dev = next(model.parameters()).device
     V = len(vocab); n = len(heads)
     kind = [vocab.kind(i) for i in range(V)]
@@ -68,25 +74,34 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
     # what the previous token was: decides which constraint applies next
     last = [kind[h[-1]] if h and kind[h[-1]] in ("pitch", "dur", "pos", "bar", "rem", "tie") else "start" for h in heads]
 
-    for step in range(max_new):
-        act = [i for i in range(n) if not done[i]]
-        if not act: break
-        if progress and step and step % progress == 0:
-            print(f"    step {step}/{max_new}, {len(act)}/{n} sequences still running", flush=True)
-        T = min(max(len(seqs[i]) for i in act), model.ctx)
-        T = min(-(-T // 64) * 64, model.ctx)       # round up: fewer distinct tensor sizes on the GPU
+    def last_logits(m, act):
+        """Logits for the next token of every active sequence, as seen by model m."""
+        T = min(max(len(seqs[i]) for i in act), m.ctx)
+        T = min(-(-T // 64) * 64, m.ctx)           # round up: fewer distinct tensor sizes on the GPU
         X = torch.full((len(act), T), vocab.pad, dtype=torch.long)
         idx = []
         for r, i in enumerate(act):
             w = seqs[i]
-            if len(w) > model.ctx:                 # keep BOS + prefix, then the most recent tokens
-                k = pin[i]; cut = len(w) - (model.ctx - k)
+            if len(w) > m.ctx:                     # keep BOS + prefix, then the most recent tokens
+                k = pin[i]; cut = len(w) - (m.ctx - k)
                 for c in range(cut, min(cut + 8, len(w))):          # start on a note boundary, as in training
                     if kind[w[c]] in group_start:
                         cut = c; break                              # (keep the plain cut if none is near)
                 w = w[:k] + w[cut:]
             X[r, :len(w)] = torch.tensor(w); idx.append(len(w) - 1)
-        logits = model(X.to(dev)).float()[torch.arange(len(act)), torch.tensor(idx)].cpu() / temperature
+        return m(X.to(dev)).float()[torch.arange(len(act)), torch.tensor(idx)].cpu()
+
+    for step in range(max_new):
+        act = [i for i in range(n) if not done[i]]
+        if not act: break
+        if progress and step and step % progress == 0:
+            print(f"    step {step}/{max_new}, {len(act)}/{n} sequences still running", flush=True)
+        logits = last_logits(model, act)
+        if model2 is not None:                 # log-linear blend of the two models' predictions
+            w2 = torch.tensor([mix[1] if (nxt[i] is not None and nxt[i] <= mix[2] - 1) else mix[0]
+                               for i in act]).unsqueeze(1)
+            logits = (1 - w2) * logits.log_softmax(-1) + w2 * last_logits(model2, act).log_softmax(-1)
+        logits = logits / temperature
         if copy_penalty:
             for r, i in enumerate(act):
                 c = cur_meas[i]
