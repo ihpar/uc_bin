@@ -115,7 +115,7 @@ The Transformer predicts held-out music far better (2.0 against 3.1 bits per not
 2. **Usul changes inside a piece** (4.4% of pieces): a meter token at the change point.
 3. **Ornaments:** currently the ornamented note is kept and the ornament type is dropped.
 4. **Evaluation:** metrics for melodic quality, 3–5 seeds with paired tests, blind expert evaluation.
-5. **Rare makams:** outside the scope of composition from scratch. Prediction is moderately worse there (2.5 against 2.1 bits per note for the plain Koma53 Transformer). The collection also holds about 160 short pieces of form `seyir`, notated demonstrations of the melodic path of individual makams, which are a resource for problem 1.
+5. **Rare makams:** outside the scope of composition from scratch. Prediction is moderately worse there (2.5 against 2.1 bits per note for the plain Koma53 Transformer). The collection also holds 173 short pieces of form `seyir`, notated demonstrations of the melodic path of individual makams, which are a resource for problem 1.
 
 ## Audit (2026-11-21)
 
