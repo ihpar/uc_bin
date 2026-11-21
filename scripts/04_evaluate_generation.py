@@ -26,6 +26,10 @@ encodings, and each is also computed on the real test music as a reference value
   pitch_by_tenth  mean pitch in commas above the karar for each tenth of the piece (the seyir)
   ending diagnostics: ends_on_karar_any_octave, karar_in_last_measure, final_note_dur (mean,
   whole notes), final_pitch_top (most frequent final pitches in commas above the karar)
+  --select N (countdown models, --full): the piece is generated up to its last
+  --select_measures measures; N endings are then sampled and the most probable one whose
+  last sounding note is the karar is kept (the most probable one overall if none qualifies).
+  Reports candidate_karar_rate (per sampled ending) and karar_candidate_found (per piece).
   --save_samples writes <scenario>_samples.jsonl: the last three measures of every piece
   (generated and real) and the first 20 generated pieces in full.
 """
@@ -50,6 +54,8 @@ p.add_argument("--batch", type=int, default=64); p.add_argument("--seed", type=i
 p.add_argument("--save_samples", action="store_true")
 p.add_argument("--copy_penalty", type=float, default=0.0, help="logit penalty on literally repeating a recent measure")
 p.add_argument("--suffix", default="", help="appended to the output file name")
+p.add_argument("--select", type=int, default=0, help="countdown models: sample this many endings and keep one that ends on the karar")
+p.add_argument("--select_measures", type=int, default=4, help="number of final measures that form the ending")
 a = p.parse_args()
 REF_ONLY = a.run == "reference"
 if REF_ONLY:
@@ -192,6 +198,40 @@ def finish(st):
 print(f"[{os.path.basename(a.run.rstrip('/'))}] prompt={a.prompt} full={a.full} constrain={a.constrain} device={dev}", flush=True)
 gen, real = stats(), stats()
 full_samples = []
+sel = dict(cands=0, cands_karar=0, pieces=0, found=0)
+
+
+def ends_on_karar(tokens, makam):
+    notes, _ = parse_groups(tokens, makam)
+    snd = [n[0] for n in merge_ties([n[1:] for n in notes]) if n[0] != REST]
+    return bool(snd) and snd[-1] == karar.get(makam)
+
+
+def select_ending(chunk, heads, body, ended, info, L, pin, kw):
+    """Second pass: for every paused piece sample a.select endings for its last measures and
+    keep the most probable one that ends on the karar."""
+    jobs = [(i, c) for i in range(len(chunk)) if info["paused"][i] for c in range(a.select)]
+    out = {}
+    for b0 in range(0, len(jobs), a.batch):
+        part = jobs[b0:b0 + a.batch]
+        h = [heads[i] + body[i] for i, _ in part]
+        # the measure before the ending is complete, so the next token is its bar line
+        new2, end2, inf2 = generate_batch(
+            model, h, vocab, 600, None, measure_len=[L[i] for i, _ in part],
+            running=[L[i] if L[i] is not None else 0 for i, _ in part],
+            remaining=[min(a.select_measures, chunk[i]["n_bars"]) - 1 for i, _ in part],
+            **dict(kw, pinned=[pin[i] for i, _ in part]))
+        for (i, _), ids, e, lp, nt in zip(part, new2, end2, inf2["logp"], inf2["ntok"]):
+            ok = bool(e) and ends_on_karar(vocab.decode(body[i] + ids), chunk[i]["meta"]["makam"])
+            out.setdefault(i, []).append((ok, bool(e), lp / max(nt, 1), ids))
+        print(f"    endings {min(b0 + a.batch, len(jobs))}/{len(jobs)}", flush=True)
+    for i, cands in out.items():
+        sel["pieces"] += 1; sel["cands"] += len(cands); sel["cands_karar"] += sum(c[0] for c in cands)
+        sel["found"] += any(c[0] for c in cands)
+        best = max(cands, key=lambda c: (c[0], c[1], c[2]))      # on karar, then ended, then most probable
+        body[i] = body[i] + best[3]; ended[i] = best[1]
+    return body, ended
+
 need = a.prompt + (8 if a.full else a.new_notes)
 pieces = [x for x in corpus["test"] if len(x["groups"]) >= need]
 if a.max_pieces: pieces = pieces[:a.max_pieces]
@@ -214,9 +254,16 @@ if not REF_ONLY:
             L.append((x["meter"] if use_meter else measure_len.get(x["meta"]["usul"])) if a.constrain else None)
             started = sum(1 for n in notes if n[0])          # measures already started in the prompt
             rem.append(x["n_bars"] - started - 1 if cfg.get("rem") else None)
-        new, ended = generate_batch(model, heads, vocab, a.max_tokens if a.full else a.new_notes * 5,
-                                    None if a.full else a.new_notes, a.temperature, a.top_p, L, run,
-                                    progress=250 if a.full else 0, pinned=pin, remaining=rem, dur_first=DUR_FIRST, copy_penalty=a.copy_penalty)
+        kw = dict(temperature=a.temperature, top_p=a.top_p, pinned=pin, dur_first=DUR_FIRST,
+                  copy_penalty=a.copy_penalty)
+        limit = a.max_tokens if a.full else a.new_notes * 5
+        select = a.select and a.full and cfg.get("rem")
+        new, ended, info = generate_batch(model, heads, vocab, limit, None if a.full else a.new_notes,
+                                          measure_len=L, running=run, remaining=rem,
+                                          progress=250 if a.full else 0,
+                                          pause_rem=a.select_measures if select else None, **kw)
+        if select:
+            new, ended = select_ending(chunk, heads, new, ended, info, L, pin, kw)
         for x, ids, e in zip(chunk, new, ended):
             toks = vocab.decode(ids)
             update(gen, *parse_groups(toks, x["meta"]["makam"]), x, e)
@@ -228,6 +275,9 @@ tag = f"gen_prompt{a.prompt}" + ("_full" if a.full else "") + ("_constrained" if
 res = dict(run=os.path.basename(a.run.rstrip("/")), scenario=tag, pieces=len(pieces), prompt_notes=a.prompt,
            new_notes=None if a.full else a.new_notes, full=a.full, constrained=a.constrain,
            temperature=a.temperature, top_p=a.top_p, copy_penalty=a.copy_penalty,
+           select=a.select, select_measures=a.select_measures if a.select else None,
+           selection=dict(candidate_karar_rate=sel["cands_karar"] / sel["cands"], karar_candidate_found=sel["found"] / sel["pieces"],
+                          pieces=sel["pieces"]) if sel["pieces"] else None,
            generated=None if REF_ONLY else finish(gen), reference=finish(real))
 if not REF_ONLY:
     json.dump(res, open(os.path.join(a.run, tag + ".json"), "w"), indent=1)

@@ -25,7 +25,7 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
                    temperature: float = 1.0, top_p: float = 0.95,
                    measure_len: list | None = None, running: list | None = None,
                    progress: int = 0, pinned: list | None = None, remaining: list | None = None,
-                   dur_first: bool = False, copy_penalty: float = 0.0):
+                   dur_first: bool = False, copy_penalty: float = 0.0, pause_rem: int | None = None):
     """heads: prompt token ids per sequence. measure_len[i] is a Fraction (or None for no
     constraint); running[i] is the duration already elapsed in the current measure of the prompt.
     pinned[i] is the number of leading tokens (BOS + conditioning prefix) that must stay
@@ -35,7 +35,11 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
     copy_penalty > 0 discourages literal loops: while the current measure is, so far, an
     exact copy of one of the two previous measures (at least two notes long), the logit of
     the pitch or duration that would continue the copy is lowered by this amount.
-    Returns the newly generated ids per sequence and whether each ended with EOS."""
+    pause_rem=K (countdown models only) stops a sequence just before the bar line that opens
+    its last K measures, so that the ending can be generated separately (see select_ending
+    in scripts/04_evaluate_generation.py).
+    Returns the newly generated ids per sequence, whether each ended with EOS, and a dict
+    with `paused` flags and the summed log-probability / token count of what was sampled."""
     model.eval()
     dev = next(model.parameters()).device
     V = len(vocab); n = len(heads)
@@ -51,6 +55,7 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
     group_start = ("bar", "pos") if has_pos else ("bar", "tie", "dur" if dur_first else "pitch")
     seqs = [list(h) for h in heads]; new = [[] for _ in range(n)]
     done = [False] * n; eos = [False] * n; notes = [0] * n
+    paused = [False] * n; logp = [0.0] * n; ntok = [0] * n
     run = [Fraction(r) if r is not None else Fraction(0) for r in (running or [0] * n)]
     L = measure_len or [None] * n
     pin = pinned or [0] * n
@@ -134,8 +139,12 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
         keep = torch.cumsum(sp, -1) - sp < top_p
         sp = sp * keep
         pick = si.gather(1, torch.multinomial(sp / sp.sum(-1, keepdim=True), 1)).squeeze(1).tolist()
+        lp = torch.log(p[torch.arange(len(act)), torch.tensor(pick)].clamp_min(1e-12)).tolist()
         for r, i in enumerate(act):
             t = pick[r]
+            if pause_rem is not None and t == vocab.bar and nxt[i] is not None and nxt[i] <= pause_rem - 1:
+                done[i] = paused[i] = True; continue
+            logp[i] += lp[r]; ntok[i] += 1
             if t == vocab.eos:
                 done[i] = eos[i] = True; continue
             seqs[i].append(t); new[i].append(t)
@@ -152,4 +161,4 @@ def generate_batch(model, heads: list[list[int]], vocab, max_new: int, stop_note
                 notes[i] += 1
                 if stop_notes and notes[i] >= stop_notes: done[i] = True
             if k in ("pitch", "dur", "pos", "bar", "rem", "tie"): last[i] = k
-    return new, eos
+    return new, eos, dict(paused=paused, logp=logp, ntok=ntok)
