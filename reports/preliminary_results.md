@@ -73,13 +73,25 @@ So the failure is not a decoding artefact. Two observations describe it:
 
 Real pieces rise around three quarters of the way through and descend to the karar. The LSTM reproduces the final descent but not the rise; the Transformer is flat. Neither model has a notion of the large-scale melodic path of a makam.
 
+**Ending selection.** A decoding-time remedy in the spirit of the usul constraint: the piece is generated up to its last measures, several endings are sampled, and the most probable one whose last sounding note is the karar is kept. Every ending is the model's own output.
+
+| Model (countdown, constrained) | Endings sampled, length | Single ending on karar | Pieces with a qualifying ending | Ends on karar |
+|---|---|---|---|---|
+| LSTM | 8, last 4 measures | 50% | 95% | 93% |
+| LSTM | 16, last 8 measures | 51% | 96% | 93% |
+| Transformer (loop penalty 2) | 8, last 4 measures | 28% | 51% | 48% |
+| Transformer (loop penalty 2) | 16, last 8 measures | 24% | 58% | 54% |
+| *Real music* | | | | 97% |
+
+With the LSTM, selection brings karar endings close to real music with no loss in scale overlap (0.89), measure validity or length. With the Transformer it does not: a quarter of its sampled endings reach the karar, but they are concentrated in half of the pieces. If attempts were independent, 8 samples would succeed for about 90% of pieces; the observed 51% means that for the other half the piece is, by its last measures, in a state from which the model does not cadence at all. Selection cannot repair a body that has not been heading home, which again points to large-scale form.
+
 ### 5. Capacity is not the bottleneck
 
 In the round-2 sweep, Transformers from 0.9M to 5M parameters and dropout from 0.1 to 0.3 all landed within 0.06 bits of each other. All runs stop improving on validation after about 5,000 steps. Gains have to come from representation, structure and data, not from model size.
 
 ### 6. Likelihood and the generation metrics disagree about the LSTM
 
-The Transformer predicts held-out music far better (2.0 against 3.1 bits per note), yet on the coarse generation metrics above the LSTM is on par, and better at ending pieces. The LSTM was tuned only for dropout, so part of the likelihood gap may be tuning. The generation metrics check pitch inventory, measure length and endings; they do not measure melodic quality. Separating the models needs finer metrics and expert listening tests.
+The Transformer predicts held-out music far better (2.0 against 3.1 bits per note), yet on the coarse generation metrics above the LSTM is on par, and clearly better at whole pieces: it does not loop, it descends at the end, and with ending selection it reaches the karar in 93% of pieces against 48–54%. The LSTM was tuned only for dropout, so part of the likelihood gap may be tuning. The generation metrics check pitch inventory, measure length and endings; they do not measure melodic quality. Separating the models needs finer metrics and expert listening tests.
 
 ## Open problems that the project addresses
 
