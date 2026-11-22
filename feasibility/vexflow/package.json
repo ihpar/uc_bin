@@ -1,0 +1,7 @@
+{
+  "name": "vexflow-feasibility",
+  "private": true,
+  "type": "module",
+  "dependencies": { "vexflow": "5.9.0" },
+  "devDependencies": { "puppeteer-core": "*" }
+}

@@ -1,0 +1,256 @@
+{
+ "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+ "pieces": [
+  {
+   "name": "hicaz--sarki--duyek--yalan_degil--yusuf_nalkesen",
+   "symbols": 453,
+   "measures": 66,
+   "whole_piece": {
+    "widths_ms": 50.20000000001164,
+    "breaks_ms": 0,
+    "draw_ms": 188.09999999997672,
+    "systems_drawn": 14,
+    "systems": 14,
+    "total_ms": 238.29999999998836,
+    "to_screen_ms": 269.79999999998836,
+    "dom_nodes": 4159
+   },
+   "visible_only": {
+    "widths_ms": 29.89999999999418,
+    "breaks_ms": 0,
+    "draw_ms": 39.20000000001164,
+    "systems_drawn": 5,
+    "systems": 14,
+    "total_ms": 69.10000000000582,
+    "to_screen_ms": 82.89999999999418,
+    "dom_nodes": 1521
+   },
+   "system_draw_ms": 7.678571428571429,
+   "systems": 14,
+   "edit": {
+    "move": {
+     "median_ms": 11.799999999988358,
+     "max_ms": 38.30000000001746
+    },
+    "accidental": {
+     "median_ms": 10.60000000000582,
+     "max_ms": 41.29999999998836
+    },
+    "insert": {
+     "median_ms": 11.300000000017462,
+     "max_ms": 39.20000000001164
+    },
+    "remove": {
+     "median_ms": 12.199999999982538,
+     "max_ms": 59.5
+    }
+   },
+   "scroll_jump": {
+    "median_ms": 8.199999999982538,
+    "max_ms": 13.5
+   },
+   "click_selects_note": true
+  },
+  {
+   "name": "muhayyerkurdi--sazsemaisi--aksaksemai----sadi_isilay",
+   "symbols": 543,
+   "measures": 37,
+   "whole_piece": {
+    "widths_ms": 28.39999999999418,
+    "breaks_ms": 0.10000000000582077,
+    "draw_ms": 102.70000000001164,
+    "systems_drawn": 19,
+    "systems": 19,
+    "total_ms": 131.20000000001164,
+    "to_screen_ms": 165.89999999999418,
+    "dom_nodes": 4469
+   },
+   "visible_only": {
+    "widths_ms": 24.300000000017462,
+    "breaks_ms": 0,
+    "draw_ms": 33.89999999999418,
+    "systems_drawn": 5,
+    "systems": 19,
+    "total_ms": 58.20000000001164,
+    "to_screen_ms": 73.5,
+    "dom_nodes": 1203
+   },
+   "system_draw_ms": 5.2789473684204395,
+   "systems": 19,
+   "edit": {
+    "move": {
+     "median_ms": 7.899999999994179,
+     "max_ms": 11.299999999988358
+    },
+    "accidental": {
+     "median_ms": 7.899999999994179,
+     "max_ms": 12.10000000000582
+    },
+    "insert": {
+     "median_ms": 7.900000000023283,
+     "max_ms": 12.5
+    },
+    "remove": {
+     "median_ms": 7.7000000000116415,
+     "max_ms": 12
+    }
+   },
+   "scroll_jump": {
+    "median_ms": 9.10000000000582,
+    "max_ms": 23.39999999999418
+   },
+   "click_selects_note": true
+  },
+  {
+   "name": "rast--kar_i_natik--cenber--rast_geldim--hatibzade_osman_efendi",
+   "symbols": 2443,
+   "measures": 198,
+   "whole_piece": {
+    "widths_ms": 98.60000000000582,
+    "breaks_ms": 0,
+    "draw_ms": 434.70000000001164,
+    "systems_drawn": 81,
+    "systems": 81,
+    "total_ms": 533.3000000000175,
+    "to_screen_ms": 664.8999999999942,
+    "dom_nodes": 19394
+   },
+   "visible_only": {
+    "widths_ms": 113.90000000002328,
+    "breaks_ms": 0.09999999997671694,
+    "draw_ms": 27.20000000001164,
+    "systems_drawn": 5,
+    "systems": 81,
+    "total_ms": 141.20000000001164,
+    "to_screen_ms": 151,
+    "dom_nodes": 1092
+   },
+   "system_draw_ms": 5.0650000000008735,
+   "systems": 81,
+   "edit": {
+    "move": {
+     "median_ms": 8,
+     "max_ms": 13.700000000011642
+    },
+    "accidental": {
+     "median_ms": 7.7000000000116415,
+     "max_ms": 36.60000000000582
+    },
+    "insert": {
+     "median_ms": 7.699999999982538,
+     "max_ms": 14.800000000017462
+    },
+    "remove": {
+     "median_ms": 7.599999999976717,
+     "max_ms": 12.39999999999418
+    }
+   },
+   "scroll_jump": {
+    "median_ms": 36.5,
+    "max_ms": 55.89999999999418
+   },
+   "click_selects_note": true
+  },
+  {
+   "name": "mahur--sarki--duyek--butun_dunyaya--ali_rifat_cagatay",
+   "symbols": 2896,
+   "measures": 392,
+   "whole_piece": {
+    "widths_ms": 141.20000000001164,
+    "breaks_ms": 0,
+    "draw_ms": 571.3999999999942,
+    "systems_drawn": 97,
+    "systems": 97,
+    "total_ms": 712.6000000000058,
+    "to_screen_ms": 882.3000000000175,
+    "dom_nodes": 26427
+   },
+   "visible_only": {
+    "widths_ms": 134.10000000000582,
+    "breaks_ms": 0,
+    "draw_ms": 41.10000000000582,
+    "systems_drawn": 5,
+    "systems": 97,
+    "total_ms": 175.20000000001164,
+    "to_screen_ms": 202,
+    "dom_nodes": 1238
+   },
+   "system_draw_ms": 6.7,
+   "systems": 97,
+   "edit": {
+    "move": {
+     "median_ms": 7.800000000017462,
+     "max_ms": 12
+    },
+    "accidental": {
+     "median_ms": 7.600000000005821,
+     "max_ms": 12
+    },
+    "insert": {
+     "median_ms": 7.7999999999883585,
+     "max_ms": 12.199999999982538
+    },
+    "remove": {
+     "median_ms": 7.5,
+     "max_ms": 10.89999999999418
+    }
+   },
+   "scroll_jump": {
+    "median_ms": 59.39999999999418,
+    "max_ms": 76.20000000001164
+   },
+   "click_selects_note": true
+  },
+  {
+   "name": "segah--kar--hafif--ses-agaz_kar--abdulkadir_meragi",
+   "symbols": 6273,
+   "measures": 863,
+   "whole_piece": {
+    "widths_ms": 236.10000000000582,
+    "breaks_ms": 0,
+    "draw_ms": 1473,
+    "systems_drawn": 202,
+    "systems": 202,
+    "total_ms": 1709.1000000000058,
+    "to_screen_ms": 2055.899999999994,
+    "dom_nodes": 60888
+   },
+   "visible_only": {
+    "widths_ms": 337.6000000000058,
+    "breaks_ms": 0,
+    "draw_ms": 44.80000000001746,
+    "systems_drawn": 5,
+    "systems": 202,
+    "total_ms": 382.4000000000233,
+    "to_screen_ms": 404,
+    "dom_nodes": 1549
+   },
+   "system_draw_ms": 7.375,
+   "systems": 202,
+   "edit": {
+    "move": {
+     "median_ms": 8.799999999988358,
+     "max_ms": 23
+    },
+    "accidental": {
+     "median_ms": 8.099999999976717,
+     "max_ms": 21.800000000017462
+    },
+    "insert": {
+     "median_ms": 8.300000000017462,
+     "max_ms": 15
+    },
+    "remove": {
+     "median_ms": 8.39999999999418,
+     "max_ms": 24.70000000001164
+    }
+   },
+   "scroll_jump": {
+    "median_ms": 43.89999999999418,
+    "max_ms": 67.39999999999418
+   },
+   "click_selects_note": true
+  }
+ ],
+ "errors": []
+}

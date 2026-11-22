@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VexFlow feasibility test: makam notation</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font: 14px/1.45 system-ui, sans-serif; color: #1c1c1a; background: #f4f3ef; }
+  header { padding: 14px 20px 10px; max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  p { margin: 4px 0; }
+  .muted { color: #5f5e58; }
+  .bar { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin: 10px 0 6px; }
+  select { font: inherit; padding: 4px 6px; max-width: 100%; }
+  #status { min-height: 1.5em; font-variant-numeric: tabular-nums; }
+  .panel { background: #fff; border: 1px solid #dcdad2; border-radius: 6px; max-width: 1200px; margin: 0 auto 12px; overflow-x: auto; }
+  #scroll { height: 62vh; overflow: auto; position: relative; }
+  #score { position: relative; width: 1200px; }
+  .sys { position: absolute; left: 0; }
+  .hit { cursor: pointer; }
+  .hit.sel, .hit.sel * { fill: #c2261d; stroke: #c2261d; }
+  #glyphs { padding: 4px 10px 0; }
+  #glyphnames { padding: 0 20px 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>VexFlow feasibility test: makam notation</h1>
+  <p class="muted">Pieces from SymbTr, drawn with VexFlow 5.9 and its Bravura font. Click a note to select it; arrow keys move it,
+  keys 1–8 set a comma accidental, 0 clears it, I inserts a note, Delete removes one.</p>
+  <div class="bar">
+    <label>Piece <select id="piece"></select></label>
+    <label><input type="checkbox" id="virtual" checked> Draw only the systems in view</label>
+  </div>
+  <p id="status" role="status"></p>
+</header>
+<div class="panel"><div id="scroll"><div id="score"></div></div></div>
+<div class="panel"><div id="glyphs"></div><p id="glyphnames" class="muted"></p></div>
+<script>/*VEXFLOW*/</script>
+<script>const PIECES = /*PIECES*/;</script>
+<script>/*APP*/</script>
+</body>
+</html>
