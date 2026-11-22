@@ -12,13 +12,14 @@ font, in headless Chrome 153 on a 2-core cloud machine. Numbers are in
 | Requirement | Result |
 |---|---|
 | AEU comma accidentals on notes | All eight glyphs draw (`screenshots/accidentals.png`). VexFlow has short codes for only four; the other four, including the koma flat (the most frequent in SymbTr), work by passing the SMuFL glyph directly. |
-| Makam key signatures | Work through the custom ordered key signature (`KeySignature.setOrdered`). Spacing of the signs needs tuning. |
+| Numbered comma accidentals (Mus2 style) | Work: a flat or sharp followed by the comma count, on notes and in key signatures (`screenshots/numbered_commas.png`). The page switches between the two notations; every note keeps both spellings, as SymbTr does. Placement of the digit needs tuning. |
+| Makam key signatures | Work through the custom ordered key signature (`KeySignature.setOrdered`), read from the mu2 files. Spacing of the signs needs tuning. |
 | Usul time signatures | Work (8/8, 10/8, 16/8, 64/4 tested). |
 | Long usuls (a measure wider than a line) | Not handled by VexFlow. Solved here by cutting the measure at note boundaries and drawing dotted bar lines. |
 | Click to select a note | Works: every note is an SVG group; one click handler on the score finds it. |
 | Edit and redraw | Works with a local redraw: about 8 ms per edit (median), 60 ms worst case. |
 | Playback cursor and note highlight | Work: during playback only a class and a position change, nothing is redrawn (`screenshots/playback.png`). |
-| Microtonal playback | Works with the browser's audio engine: frequency = 440 Hz x 2^(commas from A4 / 53). Measured pitch error of the synthesized sounds is below 0.05 cents (a comma is 22.6 cents). Two synthesized sounds are selectable; sampled instruments would plug in the same way. |
+| Microtonal playback | Works with the browser's audio engine: frequency = 440 Hz x 2^(commas from A4 / 53), so one comma is 22.64 cents, as in Mus2. Playback uses the numbered spelling. Measured pitch error of the synthesized sounds is below 0.05 cents (a comma is 22.6 cents). Two synthesized sounds are selectable; sampled instruments would plug in the same way. |
 | Long pieces | Work when only the systems in view are drawn: a 6,273-symbol piece opens in 0.4 s; a 2,443-symbol piece in 0.15 s. |
 
 | Piece | Symbols | Systems | Draw everything | Draw systems in view | One system | Edit (median / max) | Jump scroll (median) |

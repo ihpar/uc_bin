@@ -12,35 +12,40 @@ const VF = VexFlow;
 const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental, Beam, Dot, StaveTie, Tuplet,
         KeySignature, Fraction, Barline } = VF;
 
-// AEU accidentals as SMuFL glyphs (all eight are in the Bravura font shipped with VexFlow)
-const ACC = { b1: '', b4: '', b5: '', b8: '',
-              '#1': '', '#4': '', '#5': '', '#8': '', n: 'n' };
-const ACC_NAME = { b1: 'koma flat', b4: 'bakiye flat', b5: 'küçük mücenneb flat', b8: 'büyük mücenneb flat',
-                   '#1': 'koma sharp', '#4': 'bakiye sharp', '#5': 'küçük mücenneb sharp', '#8': 'büyük mücenneb sharp' };
-// key signatures of the makams used in the test (accidental, written pitch)
-const KEYSIG = {
-  rast: [['b1', 'b/4'], ['#4', 'f/5']],
-  mahur: [['#4', 'f/5']],
-  segah: [['b1', 'b/4'], ['b1', 'e/5'], ['#4', 'f/5']],
-  hicaz: [['b4', 'b/4'], ['#4', 'f/5'], ['#4', 'c/5']],
-  muhayyerkurdi: [['b5', 'b/4']],
-  ussak: [['b1', 'b/4']],
-};
+/* Accidentals. A note carries a number of Holdrian commas, flat or sharp ("b2", "#4").
+   AEU notation has special signs for 1, 4, 5 and 8 commas (SMuFL glyphs in Bravura);
+   the numbered notation used by Mus2 writes a flat or sharp with the comma count.
+   SymbTr gives every note in both spellings, and they can differ (AEU b1 = numbered b2). */
+const AEU = { b1: '', b4: '', b5: '', b8: '',
+              '#1': '', '#4': '', '#5': '', '#8': '' };
+const AEU_NAME = { 1: 'koma', 4: 'bakiye', 5: 'küçük mücenneb', 8: 'büyük mücenneb' };
+function glyph(acc) {
+  if (acc === 'n') return 'n';
+  if (state.accMode === 'aeu' && AEU[acc]) return AEU[acc];
+  return (acc[0] === 'b' ? '' : '') + String.fromCodePoint(0xE880 + +acc.slice(1));
+}
+function accName(acc) {
+  const n = +acc.slice(1), kind = acc[0] === 'b' ? 'flat' : 'sharp';
+  return `${n}-comma ${kind}` + (AEU_NAME[n] ? ` (${AEU_NAME[n]})` : '');
+}
+// key signature (read from the mu2 file) and note accidental in the spelling that is on screen
+const signature = p => (state.accMode === 'aeu' ? p.keysig : p.keysig53) || [];
+const spelled = n => { const a = state.accMode === 'aeu' ? n.acc : (n.a53 || n.acc); return a && a !== 'n' ? a : null; };
 const STEPS = ['c', 'd', 'e', 'f', 'g', 'a', 'b'];
 const LINE_W = 1180, SYS_H = 150, PAD = 10;
 
-const state = { piece: null, systems: [], widths: [], drawn: new Map(), virtual: true, sel: null, host: null };
+const state = { accMode: 'aeu', piece: null, systems: [], widths: [], drawn: new Map(), virtual: true, sel: null, host: null };
 
 // ---------------------------------------------------------------- one measure
 function shownAccidentals(piece, mi) {
   /* An accidental is drawn when it differs from what the key signature and the
      earlier notes of the measure imply. */
   const def = {};
-  for (const [a, p] of KEYSIG[piece.makam] || []) def[p[0]] = a;
+  for (const [a, p] of signature(piece)) def[p[0]] = a;
   const cur = {}, out = [];
   for (const n of piece.measures[mi].n) {
     if (n.rest || n.tie) { out.push(null); continue; }
-    const want = n.acc || null;
+    const want = spelled(n);
     const have = n.k in cur ? cur[n.k] : (def[n.k[0]] || null);
     out.push(want !== have ? (want || 'n') : null);
     cur[n.k] = want;
@@ -53,7 +58,7 @@ function buildMeasure(piece, mi) {
   const notes = m.n.map((n, i) => {
     const sn = new StaveNote({ keys: [n.rest ? 'b/4' : n.k], duration: n.d + (n.rest ? 'r' : ''), autoStem: true });
     for (let d = 0; d < (n.dots || 0); d++) Dot.buildAndAttach([sn], { all: true });
-    if (show[i]) sn.addModifier(new Accidental(ACC[show[i]]), 0);
+    if (show[i]) sn.addModifier(new Accidental(glyph(show[i])), 0);
     return sn;
   });
   const voice = new Voice({ numBeats: piece.time[0], beatValue: piece.time[1] }).setMode(Voice.Mode.SOFT);
@@ -74,12 +79,12 @@ function measureWidth(piece, mi) {
 // ---------------------------------------------------------------- layout
 function keySignature(piece) {
   const ks = new KeySignature('C');
-  const sig = KEYSIG[piece.makam];
-  if (sig && sig.length) ks.setOrdered(sig.map(([a, p]) => ({ type: ACC[a], pitch: p })));
+  const sig = signature(piece);
+  if (sig && sig.length) ks.setOrdered(sig.map(([a, p]) => ({ type: glyph(a), pitch: p })));
   return ks;
 }
 function headWidth(piece, first) {
-  return 46 + 14 * (KEYSIG[piece.makam] || []).length + (first ? 34 : 0);
+  return 46 + (state.accMode === 'aeu' ? 14 : 24) * signature(piece).length + (first ? 34 : 0);
 }
 
 function breakLines(piece, widths, fromMeasure = 0, systems = []) {
@@ -210,7 +215,7 @@ function edit(fn) {
 const ops = {
   step(d) { return edit((n, i) => { if (n[i].rest) return; const [l, o] = n[i].k.split('/');
     const p = STEPS.indexOf(l) + 7 * (+o) + d; n[i].k = STEPS[((p % 7) + 7) % 7] + '/' + Math.floor(p / 7); }); },
-  accidental(a) { return edit((n, i) => { if (a) n[i].acc = a; else delete n[i].acc; }); },
+  accidental(a) { return edit((n, i) => { delete n[i].a53; if (a) n[i].acc = a; else delete n[i].acc; }); },
   insert() { return edit((n, i) => { n.splice(i + 1, 0, { d: '16', k: n[i].k || 'b/4' }); }); },
   remove() { return edit((n, i) => { if (n.length > 1) { n.splice(i, 1); state.sel.i = Math.min(i, n.length - 1); } }); },
 };
@@ -222,11 +227,10 @@ const ops = {
    Sound: synthesized in the browser, so any comma pitch is exact. An instrument
    is one function that starts a note; sampled instruments would plug in the same way. */
 const NATURAL = { c: 0, d: 9, e: 18, f: 22, g: 31, a: 40, b: 49 };
-const ACC_COMMAS = { b1: -1, b4: -4, b5: -5, b8: -8, '#1': 1, '#4': 4, '#5': 5, '#8': 8 };
 function frequency(n) {
-  const [l, o] = n.k.split('/');
-  const commas = NATURAL[l] + 53 * (+o - 4) + (n.acc ? ACC_COMMAS[n.acc] : 0) - 40;
-  return 440 * Math.pow(2, commas / 53);
+  const [l, o] = n.k.split('/'), a = n.a53 || n.acc;           // the numbered spelling is the sounding pitch
+  const shift = a && a !== 'n' ? (a[0] === 'b' ? -1 : 1) * +a.slice(1) : 0;
+  return 440 * Math.pow(2, (NATURAL[l] + 53 * (+o - 4) + shift - 40) / 53);
 }
 function seconds(n, bpm) {
   let whole = 1 / +n.d;
@@ -377,6 +381,7 @@ function stop() {
 
 // ---------------------------------------------------------------- page
 const frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+const frequencyText = n => n.rest ? '' : frequency(n).toFixed(1) + ' Hz';
 const fmt = x => x.toFixed(x < 10 ? 1 : 0) + ' ms';
 
 async function start() {
@@ -394,6 +399,7 @@ async function start() {
         `line breaks ${fmt(r.breaks_ms)}, drawing ${r.systems_drawn} of ${r.systems} systems ${fmt(r.draw_ms)}.`);
   };
   sel.onchange = open; document.getElementById('virtual').onchange = open;
+  document.getElementById('accmode').onchange = e => { state.accMode = e.target.value; open(); };
   state.host.parentElement.addEventListener('scroll', () => refresh(), { passive: true });
   state.host.addEventListener('click', e => {
     const el = e.target.closest('.hit');
@@ -401,18 +407,18 @@ async function start() {
     select(+el.dataset.m, +el.dataset.i);
     const n = state.piece.measures[state.sel.m].n[state.sel.i];
     say(`Selected measure ${state.sel.m + 1}, note ${state.sel.i + 1}: ${n.rest ? 'rest' : n.k.replace('/', '')}` +
-        (n.acc ? ' ' + ACC_NAME[n.acc] : '') + `. Arrows move it, 1–8 set a comma accidental, 0 clears it, I inserts, Delete removes.`);
+        (spelled(n) ? ', ' + accName(spelled(n)) : '') + `, ${frequencyText(n)}. Arrows move it; 1–9 flat, Shift+1–9 sharp, 0 natural; I inserts, Delete removes.`);
   });
   document.addEventListener('keydown', e => {
     if (e.target.matches('input, select')) return;
     if (e.key === ' ') { e.preventDefault(); player.on ? stop() : play(); return; }
     if (!state.sel) return;
-    const accs = ['b1', 'b4', 'b5', 'b8', '#1', '#4', '#5', '#8'];
+    const digit = /^Digit[0-9]$/.test(e.code) ? +e.code.slice(5) : -1;
     let r = null;
     if (e.key === 'ArrowUp') r = ops.step(1);
     else if (e.key === 'ArrowDown') r = ops.step(-1);
-    else if (e.key >= '1' && e.key <= '8') r = ops.accidental(accs[+e.key - 1]);
-    else if (e.key === '0') r = ops.accidental(null);
+    else if (digit > 0) r = ops.accidental((e.shiftKey ? '#' : 'b') + digit);
+    else if (digit === 0) r = ops.accidental(null);
     else if (e.key === 'i' || e.key === 'I') r = ops.insert();
     else if (e.key === 'Delete' || e.key === 'Backspace') r = ops.remove();
     else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
@@ -434,20 +440,26 @@ async function start() {
 }
 
 function drawGlyphTable() {
-  /* All eight AEU accidentals on notes, and a key signature built from them. */
+  /* Both notations on notes and in a key signature: the eight AEU signs, then numbered commas. */
   const div = document.getElementById('glyphs');
-  const r = new Renderer(div, Renderer.Backends.SVG); r.resize(1000, 150);
-  const ctx = r.getContext();
-  const stave = new Stave(10, 20, 980).addClef('treble');
-  stave.addModifier(new KeySignature('C').setOrdered([{ type: ACC.b1, pitch: 'b/4' }, { type: ACC.b4, pitch: 'e/5' }, { type: ACC['#4'], pitch: 'f/5' }]));
-  stave.addTimeSignature('10/8').setContext(ctx).draw();
-  const order = ['b1', 'b4', 'b5', 'b8', '#1', '#4', '#5', '#8'];
-  const notes = order.map((a, i) => new StaveNote({ keys: [['b/4', 'e/5', 'a/4', 'd/5', 'f/4', 'c/5', 'g/4', 'f/5'][i]], duration: 'q', autoStem: true })
-    .addModifier(new Accidental(ACC[a]), 0));
-  const v = new Voice({ numBeats: 8, beatValue: 4 }).addTickables(notes);
-  new Formatter().joinVoices([v]).formatToStave([v], stave);
-  v.draw(ctx, stave);
-  document.getElementById('glyphnames').textContent = 'Left to right: ' + order.map(a => ACC_NAME[a]).join(', ') + '.';
+  const r = new Renderer(div, Renderer.Backends.SVG); r.resize(1000, 270);
+  const ctx = r.getContext(), keep = state.accMode;
+  const row = (mode, y, sig, list) => {
+    state.accMode = mode;
+    const stave = new Stave(10, y, 980).addClef('treble');
+    stave.addModifier(new KeySignature('C').setOrdered(sig.map(([a, p]) => ({ type: glyph(a), pitch: p }))));
+    stave.addTimeSignature('10/8').setContext(ctx).draw();
+    const notes = list.map(([a, k]) => new StaveNote({ keys: [k], duration: 'q', autoStem: true }).addModifier(new Accidental(glyph(a)), 0));
+    const v = new Voice({ numBeats: list.length, beatValue: 4 }).addTickables(notes);
+    new Formatter().joinVoices([v]).formatToStave([v], stave); v.draw(ctx, stave);
+  };
+  row('aeu', 10, [['b1', 'b/4'], ['b4', 'e/5'], ['#4', 'f/5']],
+      [['b1', 'b/4'], ['b4', 'e/5'], ['b5', 'a/4'], ['b8', 'd/5'], ['#1', 'f/4'], ['#4', 'c/5'], ['#5', 'g/4'], ['#8', 'f/5']]);
+  row('numbered', 140, [['b2', 'b/4'], ['#3', 'f/5']],
+      [['b1', 'b/4'], ['b2', 'b/4'], ['b3', 'e/5'], ['b4', 'e/5'], ['b5', 'a/4'], ['#1', 'f/5'], ['#2', 'f/5'], ['#3', 'f/5'], ['#4', 'c/5'], ['#5', 'c/5']]);
+  state.accMode = keep;
+  document.getElementById('glyphnames').textContent =
+    'Top: the eight AEU signs (flats of 1, 4, 5, 8 commas, then sharps). Bottom: numbered commas, flats 1 to 5 and sharps 1 to 5. One comma is 22.64 cents.';
 }
 
 // ---------------------------------------------------------------- benchmark (used by bench.mjs)

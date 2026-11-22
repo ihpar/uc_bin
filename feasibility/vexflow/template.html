@@ -33,11 +33,12 @@
 <header>
   <h1>VexFlow feasibility test: makam notation</h1>
   <p class="muted">Pieces from SymbTr, drawn with VexFlow 5.9 and its Bravura font. Click a note to select it; arrow keys move it,
-  keys 1–8 set a comma accidental, 0 clears it, I inserts a note, Delete removes one.
+  keys 1–9 set a flat of that many commas, Shift+1–9 a sharp, 0 a natural; I inserts a note, Delete removes one.
   Play (or Space) starts from the selected note; the sound is synthesized at exact comma pitches.</p>
   <div class="bar">
     <label>Piece <select id="piece"></select></label>
     <label><input type="checkbox" id="virtual" checked> Draw only the systems in view</label>
+    <label>Accidentals <select id="accmode"><option value="aeu">AEU signs</option><option value="numbered">Numbered commas</option></select></label>
     <button id="play" type="button">Play</button>
     <label>Sound <select id="instrument"></select></label>
     <label>Tempo <input id="tempo" type="number" min="30" max="300" value="100"> quarter notes per minute</label>

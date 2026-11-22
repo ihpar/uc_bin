@@ -11,7 +11,26 @@ from fractions import Fraction
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "..", "src"))
-from symbtr import load_piece, split_at_bar_lines, TXT_DIR   # noqa: E402
+from symbtr import load_piece, split_at_bar_lines, read_text, TXT_DIR, MU2_DIR   # noqa: E402
+
+NATURAL = dict(C=0, D=9, E=18, F=22, G=31, A=40, B=49)      # Holdrian commas above C
+
+
+def key_signature_53(name):
+    """Key signature in numbered commas, from the mu2 file (row code 50)."""
+    path = os.path.join(MU2_DIR, name + ".mu2")
+    if not os.path.exists(path):
+        return []
+    for line in read_text(path).splitlines():
+        r = [c.strip() for c in line.split("\t")]
+        if r[0] == "50" and len(r) > 8:
+            out = []
+            for k in filter(None, r[8].split("/")):
+                m = re.match(r"^([A-G])(\d)([b#]\d)$", k)
+                if m: out.append([m.group(3), f"{m.group(1).lower()}/{m.group(2)}"])
+            return out
+    return []
+
 
 # single symbols: (fraction of a whole note, VexFlow duration, dots)
 SIMPLE = [(Fraction(1, d) * m, str(d), dots) for d in (1, 2, 4, 8, 16, 32, 64)
@@ -53,6 +72,10 @@ def convert(name):
             else:
                 n["k"] = f"{m.group(1).lower()}/{m.group(2)}"
                 if m.group(3): n["acc"] = m.group(3) + m.group(4)
+                # the same note in the numbered-comma spelling (SymbTr column Koma53)
+                off = e["koma"] - (318 + NATURAL[m.group(1)] + 53 * (int(m.group(2)) - 5))
+                a53 = ("#" if off > 0 else "b") + str(abs(off)) if off else None
+                if abs(off) <= 9 and a53 != n.get("acc"): n["a53"] = a53 or "n"
                 if i > 0 or e.get("tie"): n["tie"] = 1
             if tuplet: n["tup"] = 1
             bars[int(e["onset"] + 1e-9)].append(n)
@@ -75,7 +98,14 @@ def convert(name):
                 measures.append(dict(n=seg) if first else dict(n=seg, c=1)); seg, acc, first = [], Fraction(0), False
         if seg:
             measures.append(dict(n=seg) if first else dict(n=seg, c=1))
-    out = dict(name=name, **p.meta, time=[int(meter * den), den], measures=measures, skipped=skipped)
+    out = dict(name=name, **p.meta, time=[int(meter * den), den], keysig53=key_signature_53(name),
+               measures=measures, skipped=skipped)
+    # the same key signature in AEU spelling: what the notes it applies to are called there
+    out["keysig"] = []
+    for a53, pitch in out["keysig53"]:
+        seen = collections.Counter(n.get("acc") for b in measures for n in b["n"]
+                                   if not n.get("rest") and n["k"][0] == pitch[0] and n.get("a53", n.get("acc")) == a53)
+        out["keysig"].append([seen.most_common(1)[0][0] if seen else a53, pitch])
     out["notes"] = sum(len(b["n"]) for b in measures)
     with open(os.path.join(HERE, "pieces", name + ".json"), "w", encoding="utf-8") as fh:
         json.dump(out, fh, ensure_ascii=False, separators=(",", ":"))
