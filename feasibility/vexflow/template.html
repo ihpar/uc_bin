@@ -20,6 +20,11 @@
   .sys { position: absolute; left: 0; }
   .hit { cursor: pointer; }
   .hit.sel, .hit.sel * { fill: #c2261d; stroke: #c2261d; }
+  .hit.playing, .hit.playing * { fill: #1463c9; stroke: #1463c9; }
+  #cursor { position: absolute; left: 0; top: 0; width: 2px; height: 122px; background: #1463c9; opacity: .55; pointer-events: none; will-change: transform; }
+  button, input { font: inherit; }
+  button { padding: 4px 14px; min-width: 64px; }
+  input[type=number] { width: 4.5em; padding: 3px 4px; }
   #glyphs { padding: 4px 10px 0; }
   #glyphnames { padding: 0 20px 10px; }
 </style>
@@ -28,10 +33,14 @@
 <header>
   <h1>VexFlow feasibility test: makam notation</h1>
   <p class="muted">Pieces from SymbTr, drawn with VexFlow 5.9 and its Bravura font. Click a note to select it; arrow keys move it,
-  keys 1–8 set a comma accidental, 0 clears it, I inserts a note, Delete removes one.</p>
+  keys 1–8 set a comma accidental, 0 clears it, I inserts a note, Delete removes one.
+  Play (or Space) starts from the selected note; the sound is synthesized at exact comma pitches.</p>
   <div class="bar">
     <label>Piece <select id="piece"></select></label>
     <label><input type="checkbox" id="virtual" checked> Draw only the systems in view</label>
+    <button id="play" type="button">Play</button>
+    <label>Sound <select id="instrument"></select></label>
+    <label>Tempo <input id="tempo" type="number" min="30" max="300" value="100"> quarter notes per minute</label>
   </div>
   <p id="status" role="status"></p>
 </header>

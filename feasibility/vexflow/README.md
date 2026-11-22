@@ -17,6 +17,8 @@ font, in headless Chrome 153 on a 2-core cloud machine. Numbers are in
 | Long usuls (a measure wider than a line) | Not handled by VexFlow. Solved here by cutting the measure at note boundaries and drawing dotted bar lines. |
 | Click to select a note | Works: every note is an SVG group; one click handler on the score finds it. |
 | Edit and redraw | Works with a local redraw: about 8 ms per edit (median), 60 ms worst case. |
+| Playback cursor and note highlight | Work: during playback only a class and a position change, nothing is redrawn (`screenshots/playback.png`). |
+| Microtonal playback | Works with the browser's audio engine: frequency = 440 Hz x 2^(commas from A4 / 53). Measured pitch error of the synthesized sounds is below 0.05 cents (a comma is 22.6 cents). Two synthesized sounds are selectable; sampled instruments would plug in the same way. |
 | Long pieces | Work when only the systems in view are drawn: a 6,273-symbol piece opens in 0.4 s; a 2,443-symbol piece in 0.15 s. |
 
 | Piece | Symbols | Systems | Draw everything | Draw systems in view | One system | Edit (median / max) | Jump scroll (median) |
@@ -46,8 +48,8 @@ measure. Everything around that was written for this test (about 300 lines in
 
 ## Not tested
 
-Lyrics, repeats and voltas, ornaments and grace notes, section labels, playback,
-page layout for printing and PDF export, touch input, Firefox and Safari, and
+Lyrics, repeats and voltas (in drawing and in playback order), ornaments and grace
+notes, section labels, sampled instruments, page layout for printing and PDF export, touch input, Firefox and Safari, and
 undo. The opening time of long pieces is dominated by measuring every measure
 once (0.1 to 0.3 s); that can be cached or done in the background.
 

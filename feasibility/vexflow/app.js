@@ -215,6 +215,166 @@ const ops = {
   remove() { return edit((n, i) => { if (n.length > 1) { n.splice(i, 1); state.sel.i = Math.min(i, n.length - 1); } }); },
 };
 
+
+// ---------------------------------------------------------------- playback
+/* Pitch: the staff position and the comma accidental give the pitch in Holdrian
+   commas (53 to the octave); frequency = 440 Hz * 2^(commas from A4 / 53).
+   Sound: synthesized in the browser, so any comma pitch is exact. An instrument
+   is one function that starts a note; sampled instruments would plug in the same way. */
+const NATURAL = { c: 0, d: 9, e: 18, f: 22, g: 31, a: 40, b: 49 };
+const ACC_COMMAS = { b1: -1, b4: -4, b5: -5, b8: -8, '#1': 1, '#4': 4, '#5': 5, '#8': 8 };
+function frequency(n) {
+  const [l, o] = n.k.split('/');
+  const commas = NATURAL[l] + 53 * (+o - 4) + (n.acc ? ACC_COMMAS[n.acc] : 0) - 40;
+  return 440 * Math.pow(2, commas / 53);
+}
+function seconds(n, bpm) {
+  let whole = 1 / +n.d;
+  whole *= (2 ** ((n.dots || 0) + 1) - 1) / 2 ** (n.dots || 0);
+  if (n.tup) whole *= 2 / 3;
+  return whole * 4 * 60 / bpm;
+}
+
+const audio = { ctx: null, out: null, plucks: new Map() };
+function audioContext() {
+  if (!audio.ctx) {
+    audio.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    audio.out = audio.ctx.createGain(); audio.out.gain.value = 0.5;
+    const comp = audio.ctx.createDynamicsCompressor();
+    audio.out.connect(comp).connect(audio.ctx.destination);
+  }
+  return audio.ctx;
+}
+function pluckBuffer(freq) {
+  /* Plucked-string sound as a sum of decaying harmonics of exactly `freq`
+     (higher harmonics are weaker and die away faster). Cached per pitch. */
+  const ctx = audio.ctx, key = Math.round(freq * 100);
+  if (audio.plucks.has(key)) return audio.plucks.get(key);
+  const sr = ctx.sampleRate, len = Math.floor(sr * 2.5);
+  const buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
+  const H = Math.min(14, Math.floor(0.45 * sr / freq));
+  let norm = 0;
+  for (let h = 1; h <= H; h++) {
+    const amp = Math.sin(Math.PI * h * 0.23) / h, w = 2 * Math.PI * freq * h / sr;   // plucked at 23% of the string
+    const decay = Math.exp(-(1.6 + 0.5 * h) / sr);
+    let env = 1; norm += Math.abs(amp);
+    for (let i = 0; i < len; i++) { d[i] += amp * env * Math.sin(w * i); env *= decay; }
+  }
+  const attack = Math.floor(sr * 0.002);
+  for (let i = 0; i < len; i++) d[i] *= (i < attack ? i / attack : 1) / norm;
+  const v = { buf, rate: 1 };
+  audio.plucks.set(key, v);
+  return v;
+}
+const INSTRUMENTS = {
+  pluck: { label: 'Plucked string (synthesized)', start(freq, t, dur) {
+    const ctx = audio.ctx, { buf, rate } = pluckBuffer(freq);
+    const src = ctx.createBufferSource(), g = ctx.createGain();
+    src.buffer = buf; src.playbackRate.value = rate;
+    g.gain.setValueAtTime(1.6, t); g.gain.setValueAtTime(1.6, t + Math.max(dur, 0.25));
+    g.gain.linearRampToValueAtTime(0, t + Math.max(dur, 0.25) + 0.25);
+    src.connect(g).connect(audio.out); src.start(t); src.stop(t + Math.max(dur, 0.25) + 0.3);
+    return src;
+  } },
+  tone: { label: 'Sustained tone (synthesized)', start(freq, t, dur) {
+    const ctx = audio.ctx, o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), g2 = ctx.createGain();
+    o.type = 'triangle'; o.frequency.value = freq; o2.type = 'sine'; o2.frequency.value = freq * 2; g2.gain.value = 0.25;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.5, t + 0.03);
+    g.gain.setValueAtTime(0.5, t + Math.max(dur - 0.04, 0.04)); g.gain.linearRampToValueAtTime(0, t + dur + 0.03);
+    o.connect(g); o2.connect(g2).connect(g); g.connect(audio.out);
+    o.start(t); o2.start(t); o.stop(t + dur + 0.05); o2.stop(t + dur + 0.05);
+    return o;
+  } },
+};
+
+const player = { on: false, events: [], next: 0, at: 0, t0: 0, timer: 0, raf: 0, live: [], cursor: null, lit: null };
+
+function playbackEvents(from, bpm) {
+  /* One event per symbol, so the cursor visits tied notes too; a tied note
+     extends the sound of the note before it instead of starting a new one. */
+  const ev = []; let t = 0, lastSound = null;
+  const ms = state.piece.measures;
+  for (let m = from.m; m < ms.length; m++) {
+    for (let i = m === from.m ? from.i : 0; i < ms[m].n.length; i++) {
+      const n = ms[m].n[i], dur = seconds(n, bpm);
+      const e = { m, i, t, dur, sound: 0 };
+      if (!n.rest) {
+        if (n.tie && lastSound) lastSound.sound += dur;
+        else { e.sound = dur; e.freq = frequency(n); lastSound = e; }
+      } else lastSound = null;
+      ev.push(e); t += dur;
+    }
+  }
+  return ev;
+}
+
+function play() {
+  stop();
+  const ctx = audioContext();
+  if (ctx.state === 'suspended') ctx.resume();
+  const bpm = Math.min(300, Math.max(30, +document.getElementById('tempo').value || 100));
+  const inst = INSTRUMENTS[document.getElementById('instrument').value];
+  player.events = playbackEvents(state.sel || { m: 0, i: 0 }, bpm);
+  player.next = 0; player.at = 0; player.t0 = ctx.currentTime + 0.12; player.on = true;
+  const schedule = () => {                     // start notes a little ahead of the audio clock
+    while (player.next < player.events.length && player.events[player.next].t < ctx.currentTime - player.t0 + 0.2) {
+      const e = player.events[player.next++];
+      if (e.sound) player.live.push(inst.start(e.freq, player.t0 + e.t, e.sound));
+    }
+    if (player.live.length > 64) player.live.splice(0, player.live.length - 64);
+  };
+  schedule(); player.timer = setInterval(schedule, 25);
+  if (!player.cursor) { player.cursor = document.createElement('div'); player.cursor.id = 'cursor'; }
+  state.host.appendChild(player.cursor);
+  document.getElementById('play').textContent = 'Stop';
+  const tick = () => {
+    if (!player.on) return;
+    const now = ctx.currentTime - player.t0, ev = player.events;
+    while (player.at + 1 < ev.length && ev[player.at + 1].t <= now) player.at++;
+    const last = ev[ev.length - 1];
+    if (now > last.t + last.dur) { stop(); return; }
+    if (now >= 0) follow(ev[player.at], ev[player.at + 1], now);
+    player.raf = requestAnimationFrame(tick);
+  };
+  player.raf = requestAnimationFrame(tick);
+}
+
+function noteElement(e) {
+  return state.host.querySelector(`.hit[data-m="${e.m}"][data-i="${e.i}"]`);
+}
+function follow(e, nextE, now) {
+  /* Highlight the sounding note and move the cursor. Only a class and a position
+     change; nothing is redrawn unless playback reaches a system that is not in view. */
+  const si = systemOf(e.m), sc = state.host.parentElement;
+  if (player.lit !== e) {
+    if (si * SYS_H < sc.scrollTop || (si + 1) * SYS_H > sc.scrollTop + sc.clientHeight) {
+      sc.scrollTop = Math.max(0, si * SYS_H - 20); refresh();
+    }
+    state.host.querySelectorAll('.playing').forEach(x => x.classList.remove('playing'));
+    const el = noteElement(e);
+    if (el) el.classList.add('playing');
+    const hx = state.host.getBoundingClientRect().x;
+    const head = x => { const h = x && (x.querySelector('.vf-notehead') || x); const b = h.getBoundingClientRect(); return b.x + b.width / 2 - hx; };
+    e.x = el ? head(el) : 0;
+    const nel = nextE && systemOf(nextE.m) === si ? noteElement(nextE) : null;
+    e.x2 = nel ? head(nel) : e.x + 24;
+    player.lit = e;
+    player.cursor.style.top = si * SYS_H + 14 + 'px';
+  }
+  const f = Math.min(1, Math.max(0, (now - e.t) / e.dur));
+  player.cursor.style.transform = `translateX(${e.x + (e.x2 - e.x) * f}px)`;
+}
+
+function stop() {
+  if (!player.on && !player.cursor) return;
+  player.on = false; clearInterval(player.timer); cancelAnimationFrame(player.raf);
+  for (const s of player.live) { try { s.stop(); } catch (_) {} }
+  player.live = []; player.lit = null;
+  if (state.host) state.host.querySelectorAll('.playing').forEach(x => x.classList.remove('playing'));
+  if (player.cursor) player.cursor.remove();
+  const b = document.getElementById('play'); if (b) b.textContent = 'Play';
+}
+
 // ---------------------------------------------------------------- page
 const frame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 const fmt = x => x.toFixed(x < 10 ? 1 : 0) + ' ms';
@@ -226,6 +386,7 @@ async function start() {
   for (const p of PIECES) sel.add(new Option(`${p.makam} ${p.form}, ${p.usul} · ${p.notes.toLocaleString()} symbols`, p.name));
   const say = t => { status.textContent = t; };
   const open = async () => {
+    stop();
     const p = JSON.parse(JSON.stringify(PIECES.find(q => q.name === sel.value)));
     const r = load(p, document.getElementById('virtual').checked);
     await frame();
@@ -243,6 +404,8 @@ async function start() {
         (n.acc ? ' ' + ACC_NAME[n.acc] : '') + `. Arrows move it, 1–8 set a comma accidental, 0 clears it, I inserts, Delete removes.`);
   });
   document.addEventListener('keydown', e => {
+    if (e.target.matches('input, select')) return;
+    if (e.key === ' ') { e.preventDefault(); player.on ? stop() : play(); return; }
     if (!state.sel) return;
     const accs = ['b1', 'b4', 'b5', 'b8', '#1', '#4', '#5', '#8'];
     let r = null;
@@ -259,8 +422,12 @@ async function start() {
       if (i >= 0 && i < state.piece.measures[m].n.length) select(m, i);
     } else return;
     e.preventDefault();
+    if (r) stop();
     if (r) say(`Edit redrawn in ${fmt(r.ms)} (${r.kind}).`);
   });
+  const inst = document.getElementById('instrument');
+  for (const [k, v] of Object.entries(INSTRUMENTS)) inst.add(new Option(v.label, k));
+  document.getElementById('play').onclick = () => (player.on ? stop() : play());
   drawGlyphTable();
   await open();
   window.ready = true;
