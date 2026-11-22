@@ -1,0 +1,74 @@
+{
+ "device": "cpu",
+ "torch": "2.15.0+cu132",
+ "threads": 2,
+ "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+ "gpu": null,
+ "tokens_per_measure": {
+  "median": 26.95744680851064,
+  "p90": 44.35
+ },
+ "piece": {
+  "median_tokens": 1441,
+  "median_measures": 52
+ },
+ "seconds_per_token": {
+  "transformer_batch1": 0.12669472431249998,
+  "transformer_batch3": 0.38749768966666664,
+  "transformer_batch8": 1.3026761325729166,
+  "lstm_batch1": 0.09317794673958346,
+  "lstm_batch3": 0.2053368651354172,
+  "lstm_batch8": 0.27569944607291613
+ },
+ "requests": {
+  "autocomplete_3x8_measures_transformer": {
+   "typical_s": 83.56758686087943,
+   "dense_s": 137.48418029373332
+  },
+  "autocomplete_3x8_measures_lstm": {
+   "typical_s": 44.28286095771466,
+   "dense_s": 72.85351975004603
+  },
+  "from_scratch_median_piece": {
+   "body_s": 182.56709773431248,
+   "endings_s": 29.728612610585937,
+   "total_s": 212.29571034489842
+  }
+ },
+ "cached": {
+  "batch1": {
+   "lstm_step_s": 0.0020750869750003178,
+   "lstm_max_diff": 1.0132789611816406e-06,
+   "transformer_step_s": 0.0030004044500003602,
+   "transformer_max_diff": 7.152557373046875e-07
+  },
+  "batch3": {
+   "lstm_step_s": 0.0027045289249997494,
+   "lstm_max_diff": 8.344650268554688e-07,
+   "transformer_step_s": 0.006999359375001291,
+   "transformer_max_diff": 8.940696716308594e-07
+  },
+  "batch8": {
+   "lstm_step_s": 0.0026815244499999837,
+   "lstm_max_diff": 9.5367431640625e-07,
+   "transformer_step_s": 0.01524191999999971,
+   "transformer_max_diff": 1.0728836059570312e-06
+  }
+ },
+ "sampling_overhead_s_per_token": {
+  "batch1": 0.0029571712812490603,
+  "batch3": 0.008674174562500525,
+  "batch8": 0.02545706106250023
+ },
+ "requests_with_cached_decoding": {
+  "autocomplete_3x8_measures_transformer": {
+   "typical_s": 3.7676453490393986,
+   "dense_s": 5.948467530692311
+  },
+  "from_scratch_median_piece": {
+   "body_s": 8.584866628730415,
+   "endings_s": 3.3098771349527265,
+   "total_s": 11.894743763683142
+  }
+ }
+}
