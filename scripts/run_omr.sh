@@ -12,15 +12,16 @@ EPOCHS=${EPOCHS:-30}
 BATCH=${BATCH:-16}
 PAGES=${PAGES:-500}
 CLEAN=${CLEAN:-1}
+TAG=${TAG:-}          # suffix for the run names, so that an earlier run is not overwritten
 
 python -c "import ultralytics" 2>/dev/null || pip install -q ultralytics
 python -c "import cv2" 2>/dev/null || { pip uninstall -y -q opencv-python; pip install -q opencv-python-headless; }
 python -c "import pymupdf, fontTools" 2>/dev/null || pip install -q pymupdf fonttools
 
 [ -f omr_data/meta.json ] || python scripts/07_export_omr_dataset.py --train_pages "$PAGES"
-python scripts/08_train_omr.py --data mixed --name mixed --epochs "$EPOCHS" --batch "$BATCH"
+python scripts/08_train_omr.py --data mixed --name "mixed$TAG" --epochs "$EPOCHS" --batch "$BATCH"
 if [ "$CLEAN" = "1" ]; then
-  python scripts/08_train_omr.py --data clean --name clean --epochs "$EPOCHS" --batch "$BATCH"
+  python scripts/08_train_omr.py --data clean --name "clean$TAG" --epochs "$EPOCHS" --batch "$BATCH"
 fi
 
 python - <<'PY'
