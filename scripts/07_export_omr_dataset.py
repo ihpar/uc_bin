@@ -14,6 +14,8 @@ many symbols are only a few pixels wide on a full page. Sets written:
     train_deg      the same tiles with synthetic print/scan/photo degradation
     val, val_deg   for model selection
     test           clean renders of test-split pieces
+    cff            clean renders in a second engraving (older Mus2 version), never
+                   used for training: a test of generalisation across styles
     scanner, phone real captures of 15 printed test pages (data/scans), with the
                    labels carried over by registration (src/register.py)
 
@@ -41,12 +43,14 @@ MIN_VISIBLE = 0.5     # a box cut by the tile edge is kept if this share is insi
 
 
 # ---------------------------------------------------------------- pages
-def labelled_files():
-    """Files whose symbols were all mapped to glyph boxes."""
+def labelled_files(embedding="truetype"):
+    """Files whose symbols were all mapped to glyph boxes. `embedding` selects the
+    engraving: "truetype" = current Mus2 font, "cff" = files typeset with an older
+    Mus2 version in 2007 (different glyph designs and layout)."""
     out = []
     with open(os.path.join(ROOT, "data", "pdf_page_counts.csv"), encoding="utf-8") as fh:
         for r in csv.DictReader(fh):
-            if r["embedding"] == "truetype" and r["unmapped"] == "0" and int(r["symbols"]) > 0:
+            if r["embedding"] == embedding and r["unmapped"] == "0" and int(r["symbols"]) > 0:
                 out.append((r["file"], int(r["pages"])))
     return out
 
@@ -208,12 +212,13 @@ def main():
     ap.add_argument("--out", default=os.path.join(ROOT, "omr_data"))
     ap.add_argument("--train_pages", type=int, default=700)
     ap.add_argument("--val_pages", type=int, default=60)
+    ap.add_argument("--cff_pages", type=int, default=200)
     ap.add_argument("--seed", type=int, default=13)
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     ap.add_argument("--smoke", action="store_true")
     a = ap.parse_args()
     if a.smoke:
-        a.train_pages, a.val_pages = 6, 2
+        a.train_pages, a.val_pages, a.cff_pages = 6, 2, 3
     random.seed(a.seed)
 
     split = piece_split()
@@ -263,6 +268,10 @@ def main():
     export_pages(wr, "train", train, "train_deg", seed=a.seed, workers=a.workers)
     export_pages(wr, "val", pages["val"][:a.val_pages], "val_deg", seed=a.seed + 1, workers=a.workers)
     export_pages(wr, "test", pages["test"], workers=a.workers)
+    # second engraving: pieces of the test split first, then others, up to --cff_pages
+    cff = [(f, p) for f, n in labelled_files("cff") for p in range(n)]
+    cff.sort(key=lambda fp: (split.get(os.path.splitext(fp[0])[0]) != "test", fp))
+    export_pages(wr, "cff", cff[:a.cff_pages], workers=a.workers)
     reg = []
     for kind in ("scanner", "phone"):
         export_captures(wr, kind, reg)
@@ -277,7 +286,7 @@ def main():
 
     yaml("clean", ["train"], ["val"])
     yaml("mixed", ["train", "train_deg"], ["val", "val_deg"])
-    for s in ("test", "scanner", "phone", "val_deg"):
+    for s in ("test", "cff", "scanner", "phone", "val_deg"):
         if wr.n[s]:
             yaml("eval_" + s, ["train"], [s])
     meta = dict(dpi=DPI, tile=TILE, min_side=MIN_SIDE, min_visible=MIN_VISIBLE, seed=a.seed,

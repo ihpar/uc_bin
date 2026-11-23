@@ -7,6 +7,7 @@ drawings rather than font characters and are returned by `page_drawings`."""
 from __future__ import annotations
 import io, logging
 import pymupdf
+from fontTools.cffLib import CFFFontSet
 from fontTools.ttLib import TTFont
 
 logging.getLogger("fontTools").setLevel(logging.ERROR)
@@ -14,25 +15,77 @@ MUSIC_FONT = "Mus2"
 
 
 def _glyph_tables(doc, page) -> dict:
-    """{font name: (cmap, glyf, unitsPerEm)} for the music fonts on the page."""
+    """{font name: lookup} for the music fonts on the page, where lookup(code)
+    returns (xMin, yMin, xMax, yMax, unitsPerEm) of the glyph, () for an empty
+    glyph, or None when the font has no glyph for that code.
+
+    Two embeddings occur in SymbTr: TrueType subsets (glyph bounds from the glyf
+    table) and bare CFF Type 1 subsets written by Acrobat Distiller (glyph bounds
+    from the charstrings, character codes from the font's built-in encoding)."""
     out = {}
     for f in page.get_fonts(full=True):
         if MUSIC_FONT not in f[3]:
             continue
-        if f[1] != "ttf" or f[2] != "TrueType":
-            continue                # CFF/Type0 embeddings: see font_kind()
-        buf = doc.extract_font(f[0])[3]
+        try:
+            buf = doc.extract_font(f[0])[3]
+        except Exception:
+            buf = None
         if not buf:
             continue
-        try:
-            t = TTFont(io.BytesIO(buf))
-        except Exception:
-            continue
-        cmap = {}
-        for tb in t["cmap"].tables:
-            cmap.update(tb.cmap)
-        out[f[3]] = (cmap, t["glyf"], t["head"].unitsPerEm)
+        if f[1] == "ttf" and f[2] == "TrueType":
+            try:
+                t = TTFont(io.BytesIO(buf))
+            except Exception:
+                continue
+            cmap = {}
+            for tb in t["cmap"].tables:
+                cmap.update(tb.cmap)
+            out[f[3]] = _ttf_lookup(cmap, t["glyf"], t["head"].unitsPerEm)
+        elif f[1] in ("cff", "cid"):
+            try:
+                cff = CFFFontSet(); cff.decompile(io.BytesIO(buf), None)
+                top = cff[0]
+                upm = round(1 / top.FontMatrix[0]) if getattr(top, "FontMatrix", None) else 1000
+                if hasattr(top, "ROS"):         # CID-keyed (Type 0, Identity-H): glyph name is the code
+                    enc = _CidNames()
+                else:
+                    enc = top.Encoding
+                    if isinstance(enc, str):    # predefined encoding: not seen in SymbTr
+                        continue
+                out[f[3]] = _cff_lookup(enc, top.CharStrings, upm)
+            except Exception:
+                continue
     return out
+
+
+class _CidNames:
+    """Encoding of a CID-keyed font: code n is the glyph named cid<n>."""
+    def __len__(self): return 65536
+    def __getitem__(self, code): return f"cid{code:05d}"
+
+
+def _ttf_lookup(cmap, glyf, upm):
+    def look(code):
+        name = next((cmap[k] for k in (code, 0xF000 + code) if k in cmap), None)
+        if name is None:
+            return None
+        g = glyf[name]
+        return () if g.numberOfContours == 0 else (g.xMin, g.yMin, g.xMax, g.yMax, upm)
+    return look
+
+
+def _cff_lookup(enc, charstrings, upm):
+    cache = {}
+    def look(code):
+        if code not in cache:
+            name = enc[code] if code < len(enc) else ".notdef"
+            if name == ".notdef" or name not in charstrings:
+                cache[code] = None
+            else:
+                b = charstrings[name].calcBounds(charstrings)
+                cache[code] = () if b is None else (b[0], b[1], b[2], b[3], upm)
+        return cache[code]
+    return look
 
 
 def _code(ch: str):
@@ -59,17 +112,15 @@ def page_symbols(doc, page) -> list[dict]:
                     code = _code(ch["c"])
                     if code is None or ch["c"].isspace():
                         continue
-                    hit = next(((cm[k], gl, u) for cm, gl, u in tables
-                                for k in (code, 0xF000 + code) if k in cm), None)
+                    hit = next((g for g in (look(code) for look in tables) if g is not None), None)
                     if hit is None:
                         syms.append(dict(code=code, bbox=None, size=s["size"])); continue
-                    gname, glyf, upm = hit
-                    g = glyf[gname]
-                    if g.numberOfContours == 0:
+                    if not hit:
                         continue            # empty glyph
+                    xmin, ymin, xmax, ymax, upm = hit
                     ox, oy = ch["origin"]; z = s["size"] / upm
                     syms.append(dict(code=code, size=s["size"],
-                                     bbox=(ox + g.xMin * z, oy - g.yMax * z, ox + g.xMax * z, oy - g.yMin * z)))
+                                     bbox=(ox + xmin * z, oy - ymax * z, ox + xmax * z, oy - ymin * z)))
     return syms
 
 
@@ -88,13 +139,15 @@ def page_drawings(page) -> list[dict]:
 
 
 def font_kind(doc) -> str:
-    """How the file embeds the music font: 'truetype' (extracted directly by this
-    module), 'cff_type0' (needs extraction by glyph index) or 'no_font' (symbols
-    are vector paths, raster images or an unnamed font)."""
+    """How the file embeds the music font: 'truetype' or 'cff' (both read by this
+    module), 'other' (a named Mus2 font in another embedding) or 'no_font'
+    (symbols are vector paths, raster images or an unnamed font)."""
     kinds = set()
     for page in doc:
         for f in page.get_fonts(full=True):
             if MUSIC_FONT in f[3]:
-                kinds.add("truetype" if (f[1] == "ttf" and f[2] == "TrueType") else "cff_type0")
-    if "truetype" in kinds: return "truetype"
-    return "cff_type0" if kinds else "no_font"
+                kinds.add("truetype" if (f[1] == "ttf" and f[2] == "TrueType") else
+                          "cff" if f[1] in ("cff", "cid") else "other")
+    for k in ("truetype", "cff", "other"):
+        if k in kinds: return k
+    return "no_font"

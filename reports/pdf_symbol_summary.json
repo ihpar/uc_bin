@@ -1,24 +1,26 @@
 {
  "files": 3000,
  "pages": 4468,
- "symbols": 569753,
- "distinct_codes": 85,
+ "symbols": 758805,
+ "distinct_codes": 102,
  "fully_extracted": {
-  "files": 1656,
-  "pages": 2260,
-  "symbols": 500323
+  "files": 2217,
+  "pages": 3011,
+  "symbols": 679627
  },
  "embedding_files": {
   "truetype": 1874,
-  "cff_type0": 593,
-  "no_font": 533
+  "cff": 585,
+  "no_font": 533,
+  "other": 8
  },
  "embedding_pages": {
   "truetype": 2575,
-  "cff_type0": 809,
-  "no_font": 1084
+  "cff": 800,
+  "no_font": 1084,
+  "other": 9
  },
- "unmapped_chars": 5785,
+ "unmapped_chars": 6084,
  "drawings": {
   "other": 454246,
   "vline": 508791,
@@ -27,10 +29,11 @@
   "filled": 156749
  },
  "font_sizes": {
-  "21": 523675,
-  "25": 39873,
-  "10": 3789,
-  "14": 2118,
-  "15": 298
+  "21": 695770,
+  "25": 53093,
+  "10": 6059,
+  "14": 3568,
+  "15": 307,
+  "11": 8
  }
 }

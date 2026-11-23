@@ -127,7 +127,7 @@ def main():
     if os.path.exists(csvp):
         with open(csvp) as fh:
             res["epochs_run"] = sum(1 for _ in csv.DictReader(fh))
-    for tag in ("test", "val_deg", "scanner", "phone"):
+    for tag in ("test", "cff", "val_deg", "scanner", "phone"):
         y = os.path.join(a.dataset, f"eval_{tag}.yaml")
         if os.path.exists(y):
             res["sets"][tag] = add_counts(evaluate(model, y, a, tag), meta, tag)
