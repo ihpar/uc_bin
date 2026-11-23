@@ -57,3 +57,20 @@ Code names are provisional (see `reports/figures/glyph_atlas.png`); the grouping
 - Weakest classes on photos: augmentation dots (0xAB, 0xE2: about 92 to 94% recall), double dots and trills with very few examples.
 - Boxes of very small symbols were enlarged to 10 px, and phone labels carry 1 to 2 px of alignment error, so mAP50-95 on photos (0.66) understates localisation quality.
 - One seed; the validation split has the known near-duplicate issue (see `preliminary_results.md`), which does not affect the test and capture sets.
+
+## Second run, 23 November 2026: a second engraving style
+
+Run `mixed_v2` (`TAG=_v2 CLEAN=0 bash scripts/run_omr.sh`, commit 418000f, one seed, 24.5 minutes). Same settings as `mixed`, but the class list now has 102 codes, and the dataset has a new test set `cff`: 200 pages typeset with an older Mus2 version (2007), which differ in glyph design and layout and were not used for training.
+
+| Test set | Recall | Precision | Accidentals recall | Boxes |
+|---|---|---|---|---|
+| Clean renders, training style (196 pages) | 99.8% | 99.6% | 99.7% | 79,540 |
+| Clean renders, second style, unseen in training (200 pages) | 97.9% | 98.2% | 99.7% | 85,791 |
+| Flatbed scans (15 pages) | 99.0% | 99.2% | 99.9% | 7,320 |
+| Phone photos (15 pages) | 97.1% | 98.8% | 95.3% | 11,688 |
+
+- On the second style, 911 boxes (1.1%) belong to 17 symbol classes that never occur in the training style (the largest is 0xE0 with 637 boxes); the detector cannot find these by construction. On the classes it has seen, recall is 99.0% and precision 99.3%.
+- Accidental precision on the second style is 96.3%; the 5-comma flat (0x50) has precision 0.77, so some other symbol is being read as that flat.
+- mAP50 on the second style is 0.68 because the unseen classes count as zero.
+- Run-to-run variation: scans and photos differ from the first run by up to 0.5 points (photos 97.6% then 97.1%).
+- Both styles are Mus2 output. Scores from other publishers are still untested, and the second style was tested on clean renders only.
