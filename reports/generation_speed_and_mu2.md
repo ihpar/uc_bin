@@ -1,6 +1,6 @@
 # Composition speed and the mu2 format
 
-Checks of 22 November 2026 for the requirements table.
+Checks of 22 and 24 November 2026 for the requirements table.
 
 ## Composition speed
 
@@ -27,7 +27,36 @@ median test piece has 52 measures and 1,441 tokens.
 - The "cached" column is computed from these measured parts. Cached decoding is not
   yet integrated in `src/generation.py`; when the sequence outgrows the context
   window the cache has to be rebuilt, which happens once every 64 tokens at most.
-- Not measured on a GPU.
+
+### On a GPU, and page recognition (24 November 2026)
+
+`bash scripts/run_speed.sh` on a rented machine with one RTX 4090 and a 16-core
+AMD Ryzen 9 7950X. Results in `reports/results/generation_speed_cuda.json` and
+`reports/results/omr_speed_cuda.json`.
+
+| Request | RTX 4090, current research code (no cache) |
+|---|---|
+| Autocomplete: 3 alternatives of 8 measures (Transformer) | 0.76 s (1.24 s for dense measures) |
+| From scratch: median piece, then 8 candidate endings | 3.2 s |
+
+| Symbol detection for one A4 page (6 tiles at 200 dpi, about 430 symbols) | Time |
+|---|---|
+| RTX 4090 | 0.03 s |
+| CPU, 4 threads of the Ryzen 9 7950X | 0.82 s |
+
+- On the GPU the current code already meets the response-time targets (5 s and
+  30 s) without cached decoding: 1.7 ms per token for one sequence, 3.5 ms for three.
+- The "with cached decoding" estimate in the GPU file (1.4 s and 5.2 s) is higher
+  than the measured uncached time. The estimate adds a separately measured
+  sampling overhead to the cached step, and on a GPU that overhead is
+  overestimated; it should not be quoted. Cached decoding matters on a CPU, not here.
+- Detection was timed with a detector trained for 10 epochs for this purpose
+  (`speedcheck`); its accuracy is not reported. Merging tiles and building notes
+  are not included, because that code does not exist yet.
+- Both services are therefore fast enough on a CPU-only server as well: about 0.8 s
+  per page for detection on four fast cores, and about 4 s per autocomplete request
+  with cached decoding on two slow ones (estimate above). A GPU is needed for
+  training, not for serving a small number of users.
 
 ## mu2 files
 
