@@ -62,4 +62,5 @@ npm install
 python make_piece.py <SymbTr file name without .txt>    # optional: add a piece
 python build.py                                          # -> dist/index.html (open in a browser)
 node bench.mjs                                           # -> results.json, screenshots/
+node bench.mjs <path to chrome or firefox> <output name> # another browser, another results file
 ```
