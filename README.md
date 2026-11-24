@@ -23,6 +23,7 @@ Preliminary work for a TÜBİTAK 3501 resubmission: makam-aware symbolic music m
 | `scripts/07_export_omr_dataset.py` | symbol-detection dataset from the labelled PDFs and from `data/scans` → `omr_data/` |
 | `scripts/08_train_omr.py` | trains and evaluates the baseline symbol detector → `runs/omr/<name>/results.json` |
 | `scripts/run_omr.sh` | the OMR preliminary study end to end |
+| `scripts/run_speed.sh` | speed of composition and of page recognition on this machine (GPU, then CPU) |
 | `feasibility/vexflow/` | feasibility test of the VexFlow engraving library for the editor (own README) |
 
 ## Usage

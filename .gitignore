@@ -8,3 +8,4 @@ checkpoints.tar.gz
 omr_data/
 omr_work/
 *.pt
+runs/omr/speedcheck/
