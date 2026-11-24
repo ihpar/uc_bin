@@ -1,0 +1,305 @@
+{
+ "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:157.0) Gecko/20100101 Firefox/157.0",
+ "pieces": [
+  {
+   "name": "huseyni--turku--aksak--demirciler_demir--_anonim_",
+   "symbols": 299,
+   "measures": 33,
+   "whole_piece": {
+    "widths_ms": 11,
+    "breaks_ms": 0,
+    "draw_ms": 34,
+    "systems_drawn": 11,
+    "systems": 11,
+    "total_ms": 45,
+    "to_screen_ms": 64,
+    "dom_nodes": 2548
+   },
+   "visible_only": {
+    "widths_ms": 9,
+    "breaks_ms": 0,
+    "draw_ms": 20,
+    "systems_drawn": 7,
+    "systems": 11,
+    "total_ms": 29,
+    "to_screen_ms": 33,
+    "dom_nodes": 1602
+   },
+   "system_draw_ms": 2.6363636363636362,
+   "systems": 11,
+   "edit": {
+    "move": {
+     "median_ms": 3,
+     "max_ms": 5
+    },
+    "accidental": {
+     "median_ms": 4,
+     "max_ms": 5
+    },
+    "insert": {
+     "median_ms": 3,
+     "max_ms": 4
+    },
+    "remove": {
+     "median_ms": 4,
+     "max_ms": 5
+    }
+   },
+   "scroll_jump": {
+    "median_ms": 1,
+    "max_ms": 4
+   },
+   "click_selects_note": true
+  },
+  {
+   "name": "hicaz--sarki--duyek--yalan_degil--yusuf_nalkesen",
+   "symbols": 453,
+   "measures": 66,
+   "whole_piece": {
+    "widths_ms": 14,
+    "breaks_ms": 0,
+    "draw_ms": 46,
+    "systems_drawn": 14,
+    "systems": 14,
+    "total_ms": 60,
+    "to_screen_ms": 67,
+    "dom_nodes": 4159
+   },
+   "visible_only": {
+    "widths_ms": 13,
+    "breaks_ms": 0,
+    "draw_ms": 24,
+    "systems_drawn": 7,
+    "systems": 14,
+    "total_ms": 37,
+    "to_screen_ms": 50,
+    "dom_nodes": 2140
+   },
+   "system_draw_ms": 3.0714285714285716,
+   "systems": 14,
+   "edit": {
+    "move": {
+     "median_ms": 5,
+     "max_ms": 12
+    },
+    "accidental": {
+     "median_ms": 4,
+     "max_ms": 20
+    },
+    "insert": {
+     "median_ms": 5,
+     "max_ms": 22
+    },
+    "remove": {
+     "median_ms": 5,
+     "max_ms": 28
+    }
+   },
+   "scroll_jump": {
+    "median_ms": 3,
+    "max_ms": 5
+   },
+   "click_selects_note": true
+  },
+  {
+   "name": "muhayyerkurdi--sazsemaisi--aksaksemai----sadi_isilay",
+   "symbols": 543,
+   "measures": 37,
+   "whole_piece": {
+    "widths_ms": 14,
+    "breaks_ms": 0,
+    "draw_ms": 53,
+    "systems_drawn": 19,
+    "systems": 19,
+    "total_ms": 67,
+    "to_screen_ms": 83,
+    "dom_nodes": 4469
+   },
+   "visible_only": {
+    "widths_ms": 15,
+    "breaks_ms": 0,
+    "draw_ms": 24,
+    "systems_drawn": 7,
+    "systems": 19,
+    "total_ms": 39,
+    "to_screen_ms": 50,
+    "dom_nodes": 1633
+   },
+   "system_draw_ms": 2.789473684210526,
+   "systems": 19,
+   "edit": {
+    "move": {
+     "median_ms": 4,
+     "max_ms": 6
+    },
+    "accidental": {
+     "median_ms": 4,
+     "max_ms": 6
+    },
+    "insert": {
+     "median_ms": 4,
+     "max_ms": 5
+    },
+    "remove": {
+     "median_ms": 4,
+     "max_ms": 6
+    }
+   },
+   "scroll_jump": {
+    "median_ms": 4,
+    "max_ms": 8
+   },
+   "click_selects_note": true
+  },
+  {
+   "name": "rast--kar_i_natik--cenber--rast_geldim--hatibzade_osman_efendi",
+   "symbols": 2443,
+   "measures": 198,
+   "whole_piece": {
+    "widths_ms": 64,
+    "breaks_ms": 0,
+    "draw_ms": 207,
+    "systems_drawn": 81,
+    "systems": 81,
+    "total_ms": 271,
+    "to_screen_ms": 321,
+    "dom_nodes": 19394
+   },
+   "visible_only": {
+    "widths_ms": 63,
+    "breaks_ms": 0,
+    "draw_ms": 17,
+    "systems_drawn": 7,
+    "systems": 81,
+    "total_ms": 80,
+    "to_screen_ms": 99,
+    "dom_nodes": 1612
+   },
+   "system_draw_ms": 2.45,
+   "systems": 81,
+   "edit": {
+    "move": {
+     "median_ms": 3,
+     "max_ms": 5
+    },
+    "accidental": {
+     "median_ms": 3,
+     "max_ms": 4
+    },
+    "insert": {
+     "median_ms": 4,
+     "max_ms": 5
+    },
+    "remove": {
+     "median_ms": 3,
+     "max_ms": 6
+    }
+   },
+   "scroll_jump": {
+    "median_ms": 20,
+    "max_ms": 23
+   },
+   "click_selects_note": true
+  },
+  {
+   "name": "mahur--sarki--duyek--butun_dunyaya--ali_rifat_cagatay",
+   "symbols": 2896,
+   "measures": 392,
+   "whole_piece": {
+    "widths_ms": 78,
+    "breaks_ms": 0,
+    "draw_ms": 264,
+    "systems_drawn": 93,
+    "systems": 93,
+    "total_ms": 342,
+    "to_screen_ms": 398,
+    "dom_nodes": 26292
+   },
+   "visible_only": {
+    "widths_ms": 82,
+    "breaks_ms": 0,
+    "draw_ms": 20,
+    "systems_drawn": 7,
+    "systems": 93,
+    "total_ms": 102,
+    "to_screen_ms": 123,
+    "dom_nodes": 1808
+   },
+   "system_draw_ms": 2.8,
+   "systems": 93,
+   "edit": {
+    "move": {
+     "median_ms": 4,
+     "max_ms": 5
+    },
+    "accidental": {
+     "median_ms": 4,
+     "max_ms": 13
+    },
+    "insert": {
+     "median_ms": 4,
+     "max_ms": 5
+    },
+    "remove": {
+     "median_ms": 3,
+     "max_ms": 12
+    }
+   },
+   "scroll_jump": {
+    "median_ms": 26,
+    "max_ms": 29
+   },
+   "click_selects_note": true
+  },
+  {
+   "name": "segah--kar--hafif--ses-agaz_kar--abdulkadir_meragi",
+   "symbols": 6273,
+   "measures": 863,
+   "whole_piece": {
+    "widths_ms": 161,
+    "breaks_ms": 0,
+    "draw_ms": 564,
+    "systems_drawn": 202,
+    "systems": 202,
+    "total_ms": 725,
+    "to_screen_ms": 830,
+    "dom_nodes": 60888
+   },
+   "visible_only": {
+    "widths_ms": 161,
+    "breaks_ms": 0,
+    "draw_ms": 24,
+    "systems_drawn": 7,
+    "systems": 202,
+    "total_ms": 185,
+    "to_screen_ms": 201,
+    "dom_nodes": 2198
+   },
+   "system_draw_ms": 2.7,
+   "systems": 202,
+   "edit": {
+    "move": {
+     "median_ms": 5,
+     "max_ms": 15
+    },
+    "accidental": {
+     "median_ms": 4,
+     "max_ms": 17
+    },
+    "insert": {
+     "median_ms": 4,
+     "max_ms": 25
+    },
+    "remove": {
+     "median_ms": 5,
+     "max_ms": 24
+    }
+   },
+   "scroll_jump": {
+    "median_ms": 27,
+    "max_ms": 29
+   },
+   "click_selects_note": true
+  }
+ ]
+}
