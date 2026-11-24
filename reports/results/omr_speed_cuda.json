@@ -1,0 +1,28 @@
+{
+ "weights": "omr_work/speedcheck/weights/best.pt",
+ "trained_weights": true,
+ "classes": 102,
+ "torch": "2.13.0+cu132",
+ "dpi": 200,
+ "tile": 1024,
+ "gpu": "NVIDIA GeForce RTX 4090",
+ "cpu": {
+  "threads": 4,
+  "pages": 5,
+  "tiles_per_page": 6,
+  "detections_per_page": 472,
+  "seconds_per_page": {
+   "median": 0.8214909629896283,
+   "max": 0.8522851479938254
+  }
+ },
+ "cuda": {
+  "pages": 30,
+  "tiles_per_page": 6.0,
+  "detections_per_page": 429.5,
+  "seconds_per_page": {
+   "median": 0.0302814039750956,
+   "max": 0.0465423259884119
+  }
+ }
+}

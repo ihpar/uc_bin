@@ -1,0 +1,74 @@
+{
+ "device": "cuda",
+ "torch": "2.13.0+cu132",
+ "threads": 16,
+ "cpu": "AMD Ryzen 9 7950X 16-Core Processor",
+ "gpu": "NVIDIA GeForce RTX 4090",
+ "tokens_per_measure": {
+  "median": 26.95744680851064,
+  "p90": 44.35
+ },
+ "piece": {
+  "median_tokens": 1441,
+  "median_measures": 52
+ },
+ "seconds_per_token": {
+  "transformer_batch1": 0.001694167403911706,
+  "transformer_batch3": 0.003504770436848048,
+  "transformer_batch8": 0.0066603301238501444,
+  "lstm_batch1": 0.005194914403546136,
+  "lstm_batch3": 0.005541912938497262,
+  "lstm_batch8": 0.007184782185504446
+ },
+ "requests": {
+  "autocomplete_3x8_measures_transformer": {
+   "typical_s": 0.7558373010189748,
+   "dense_s": 1.2434925509936876
+  },
+  "autocomplete_3x8_measures_lstm": {
+   "typical_s": 1.1951665860554948,
+   "dense_s": 1.9662707105788286
+  },
+  "from_scratch_median_piece": {
+   "body_s": 2.4412952290367684,
+   "endings_s": 0.7747335343858837,
+   "total_s": 3.216028763422652
+  }
+ },
+ "cached": {
+  "batch1": {
+   "lstm_step_s": 0.00019380800076760352,
+   "lstm_max_diff": 7.051229476928711e-05,
+   "transformer_step_s": 0.0010140107246115805,
+   "transformer_max_diff": 0.0001485198736190796
+  },
+  "batch3": {
+   "lstm_step_s": 0.0001233074988704175,
+   "lstm_max_diff": 0.000353395938873291,
+   "transformer_step_s": 0.0010835952998604625,
+   "transformer_max_diff": 0.0001569613814353943
+  },
+  "batch8": {
+   "lstm_step_s": 0.00012180194898974151,
+   "lstm_max_diff": 0.00034052133560180664,
+   "transformer_step_s": 0.0011038883996661753,
+   "transformer_max_diff": 0.0001513063907623291
+  }
+ },
+ "sampling_overhead_s_per_token": {
+  "batch1": 0.0015625772502971813,
+  "batch3": 0.005304169157170691,
+  "batch8": 0.013156785498722456
+ },
+ "requests_with_cached_decoding": {
+  "autocomplete_3x8_measures_transformer": {
+   "typical_s": 1.3810873350425452,
+   "dense_s": 2.2698835997915014
+  },
+  "from_scratch_median_piece": {
+   "body_s": 3.7128632718435255,
+   "endings_s": 1.439012041440939,
+   "total_s": 5.151875313284465
+  }
+ }
+}
