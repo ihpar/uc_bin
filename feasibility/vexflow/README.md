@@ -3,9 +3,13 @@
 Question: can the score editor be built on the open-source engraving library
 VexFlow, or does it need its own drawing engine?
 
-Tested on 22 November 2026 with VexFlow 5.9.0 (MIT licence) and its Bravura
-font, in headless Chrome 153 on a 2-core cloud machine. Numbers are in
-`results.json`, pictures in `screenshots/`.
+Tested with VexFlow 5.9.0 (MIT licence) and its Bravura font on two setups:
+Firefox 157 on a 2020 MacBook Air (M1, 16 GB), 24 November 2026, numbers in
+`results_firefox.json`; and headless Chrome 153 on a 2-core cloud machine,
+22 November 2026, numbers in `results.json`. The table below and the figures in
+the text are from the MacBook run; the cloud run is about twice as slow.
+Drawing, selection, playback and sound were also checked by hand in Firefox.
+Pictures are in `screenshots/` (Chrome run). Firefox rounds its timer to 1 ms.
 
 ## Result
 
@@ -17,18 +21,19 @@ font, in headless Chrome 153 on a 2-core cloud machine. Numbers are in
 | Usul time signatures | Work (8/8, 10/8, 16/8, 64/4 tested). |
 | Long usuls (a measure wider than a line) | Not handled by VexFlow. Solved here by cutting the measure at note boundaries and drawing dotted bar lines. |
 | Click to select a note | Works: every note is an SVG group; one click handler on the score finds it. |
-| Edit and redraw | Works with a local redraw: about 8 ms per edit (median), 60 ms worst case. |
+| Edit and redraw | Works with a local redraw: about 5 ms per edit (median), 28 ms worst case. |
 | Playback cursor and note highlight | Work: during playback only a class and a position change, nothing is redrawn (`screenshots/playback.png`). |
 | Microtonal playback | Works with the browser's audio engine: frequency = 440 Hz x 2^(commas from A4 / 53), so one comma is 22.64 cents, as in Mus2. Playback uses the numbered spelling. Measured pitch error of the synthesized sounds is below 0.05 cents (a comma is 22.6 cents). Two synthesized sounds are selectable; sampled instruments would plug in the same way. |
-| Long pieces | Work when only the systems in view are drawn: a 6,273-symbol piece opens in 0.4 s; a 2,443-symbol piece in 0.15 s. |
+| Long pieces | Work when only the systems in view are drawn: a 6,273-symbol piece opens in 0.2 s; a 2,443-symbol piece in 0.10 s. |
 
 | Piece | Symbols | Systems | Draw everything | Draw systems in view | One system | Edit (median / max) | Jump scroll (median) |
 |---|---|---|---|---|---|---|---|
-| hicaz şarkı | 453 | 14 | 270 ms | 83 ms | 7.7 ms | 12 / 60 ms | 8 ms |
-| muhayyerkürdi saz semaisi | 543 | 19 | 166 ms | 74 ms | 5.3 ms | 8 / 13 ms | 9 ms |
-| rast kâr-ı nâtık | 2,443 | 81 | 665 ms | 151 ms | 5.1 ms | 8 / 37 ms | 37 ms |
-| mahur şarkı | 2,896 | 97 | 882 ms | 202 ms | 6.7 ms | 8 / 12 ms | 59 ms |
-| segâh kâr | 6,273 | 202 | 2,056 ms | 404 ms | 7.4 ms | 9 / 25 ms | 44 ms |
+| hüseyni türkü | 299 | 11 | 64 ms | 33 ms | 2.6 ms | 4 / 5 ms | 1 ms |
+| hicaz şarkı | 453 | 14 | 67 ms | 50 ms | 3.1 ms | 5 / 28 ms | 3 ms |
+| muhayyerkürdi saz semaisi | 543 | 19 | 83 ms | 50 ms | 2.8 ms | 4 / 6 ms | 4 ms |
+| rast kâr-ı nâtık | 2,443 | 81 | 321 ms | 99 ms | 2.5 ms | 4 / 6 ms | 20 ms |
+| mahur şarkı | 2,896 | 93 | 398 ms | 123 ms | 2.8 ms | 4 / 13 ms | 26 ms |
+| segâh kâr | 6,273 | 202 | 830 ms | 201 ms | 2.7 ms | 5 / 25 ms | 27 ms |
 
 Times are from the start of loading until the browser has painted. "Edit" covers
 moving a note, changing its accidental, inserting and removing a note; the
@@ -50,9 +55,9 @@ measure. Everything around that was written for this test (about 300 lines in
 ## Not tested
 
 Lyrics, repeats and voltas (in drawing and in playback order), ornaments and grace
-notes, section labels, sampled instruments, page layout for printing and PDF export, touch input, Firefox and Safari, and
+notes, section labels, sampled instruments, page layout for printing and PDF export, touch input, Safari, and
 undo. The opening time of long pieces is dominated by measuring every measure
-once (0.1 to 0.3 s); that can be cached or done in the background.
+once (0.05 to 0.15 s); that can be cached or done in the background.
 
 ## Run it
 
